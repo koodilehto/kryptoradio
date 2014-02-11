@@ -47,10 +47,12 @@ struct __attribute__ ((__packed__)) msg_inv_vect {
 	char hash[32];
 };
 
+// Prototypes
 uint64_t var_int(uint8_t *buf);
 int var_int_len(uint8_t *buf);
 uint32_t checksum(struct msg *m);
 unsigned char *dhash(const unsigned char *d, unsigned long n);
+char *hex256(const unsigned char *buf);
 
 int main(int argc, char *argv[])
 {
@@ -133,11 +135,7 @@ int main(int argc, char *argv[])
 			
 			// Pretty-print transaction hash
 			for (uint64_t i = 0; i<invs; i++) {
-				printf("inv #%d: ",i);
-				for (int j=31; j>=0; j--) {
-					printf("%02hhx",inv[i].hash[j]);
-				}
-				printf("\n");
+				printf("inv #%d: %s\n",i,hex256(inv[i].hash));
 			}
 
 			// Payload in getdata request is identical to
@@ -184,4 +182,15 @@ uint32_t checksum(struct msg *m)
 unsigned char *dhash(const unsigned char *d, unsigned long n)
 {
 	return SHA256(SHA256(d,n,NULL),32,NULL);
+}
+
+char *hex256(const unsigned char *in)
+{
+	static char out[65];
+
+	for (int i=0; i<32; i++) {
+		snprintf(out+2*i,3,"%02hhx",in[31-i]);
+	}
+
+	return out;
 }
