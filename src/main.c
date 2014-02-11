@@ -14,6 +14,7 @@
 #include <arpa/inet.h> 
 #include <err.h>
 #include <stdbool.h>
+#include <openssl/sha.h>
 
 uint8_t join_message[] = {
 	0xF9, 0xBE, 0xB4, 0xD9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6F,
@@ -33,11 +34,12 @@ uint8_t join_message[] = {
 
 const int join_message_len = sizeof(join_message);
 
-struct __attribute__ ((__packed__)) msg_header {
+struct __attribute__ ((__packed__)) msg {
 	uint32_t magic;
 	char command[12];
 	uint32_t length;
 	uint32_t checksum;
+	uint8_t payload[];
 };
 
 struct __attribute__ ((__packed__)) msg_inv_vect {
@@ -47,11 +49,17 @@ struct __attribute__ ((__packed__)) msg_inv_vect {
 
 uint64_t var_int(uint8_t *buf);
 int var_int_len(uint8_t *buf);
+uint32_t checksum(struct msg *m);
 
 int main(int argc, char *argv[])
 {
 	int sockfd;
-	struct sockaddr_in serv_addr; 
+	struct sockaddr_in serv_addr;
+	int buf_len = sizeof(struct msg);
+	struct msg *buf = malloc(buf_len);
+	if (buf == NULL) {
+		errx(5,"Memory allocation failed");
+	}
 
 	if(argc != 2) {
 		errx(1,"Usage: %s <ip of server>",argv[0]);
@@ -88,32 +96,37 @@ int main(int argc, char *argv[])
 	// Message receiver loop. Processes messages having this format:
 	// https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
 	while (true) {
-		struct msg_header header;
-		uint8_t payload[1024];
 
 		// Take header
-		if (fread(&header,sizeof(header),1,bitcoind) != 1) {
+		if (fread(buf,sizeof(struct msg),1,bitcoind) != 1) {
 			errx(3,"Receiving data from bitcoind has failed");
 		}
 
-		// FIXME One should change byte ordering on big-endian machines!
+		// FIXME One should swap byte ordering on big-endian machines!
 
-		printf("%s, %d tavua.\n",header.command,header.length);
+		printf("%s, %d tavua.\n",buf->command,buf->length);
 
-		if (header.length > sizeof(payload)) {
-			errx(4,"Too small receive buffer, exiting.");
+		// Scaling the buffer
+		buf_len = sizeof(struct msg)+buf->length;
+		buf = realloc(buf, buf_len);
+		if (buf == NULL) {
+			errx(5,"Memory allocation failed");
 		}
 
-		if (header.length != 0 && fread(payload,header.length,1,bitcoind) != 1) {
+		if (buf->length != 0 && fread(buf->payload,buf->length,1,bitcoind) != 1) {
 			errx(3,"Receiving data from bitcoind has failed");
+		}
+
+		if (checksum(buf) != buf->checksum) {
+			errx(3,"Checksum error. Probably we got out of sync.");
 		}
 
 		// Parsing it
-		if (strcmp(header.command,"inv") == 0) {
+		if (strcmp(buf->command,"inv") == 0) {
 			// Match structure to data
-			uint64_t invs = var_int(payload);
+			uint64_t invs = var_int(buf->payload);
 			struct msg_inv_vect *inv =
-				(struct msg_inv_vect*)(payload+var_int_len(payload));
+				(struct msg_inv_vect*)(buf->payload+var_int_len(buf->payload));
 			
 			// Pretty-print transaction hash
 			for (uint64_t i = 0; i<invs; i++) {
@@ -143,4 +156,9 @@ int var_int_len(uint8_t *buf)
 	if (*buf == 0xfe) return 5;
 	if (*buf == 0xff) return 9;
 	return 1;
+}
+
+uint32_t checksum(struct msg *m)
+{
+	return *(uint32_t*)SHA256(SHA256(m->payload,m->length,NULL),32,NULL);
 }
