@@ -50,6 +50,7 @@ struct __attribute__ ((__packed__)) msg_inv_vect {
 uint64_t var_int(uint8_t *buf);
 int var_int_len(uint8_t *buf);
 uint32_t checksum(struct msg *m);
+unsigned char *dhash(const unsigned char *d, unsigned long n);
 
 int main(int argc, char *argv[])
 {
@@ -121,8 +122,10 @@ int main(int argc, char *argv[])
 			errx(3,"Checksum error. Probably we got out of sync.");
 		}
 
-		// Parsing it
+		// Message valid, parsing it
 		if (strcmp(buf->command,"inv") == 0) {
+			// Got inv, requesting content
+
 			// Match structure to data
 			uint64_t invs = var_int(buf->payload);
 			struct msg_inv_vect *inv =
@@ -175,5 +178,10 @@ int var_int_len(uint8_t *buf)
 
 uint32_t checksum(struct msg *m)
 {
-	return *(uint32_t*)SHA256(SHA256(m->payload,m->length,NULL),32,NULL);
+	return *(uint32_t*)dhash(m->payload,m->length);
+}
+
+unsigned char *dhash(const unsigned char *d, unsigned long n)
+{
+	return SHA256(SHA256(d,n,NULL),32,NULL);
 }
