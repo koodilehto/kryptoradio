@@ -31,7 +31,7 @@ uint8_t join_message[] = {
 	0xC0, 0x3E, 0x03, 0x00
 };
 
-struct msg_header {
+struct __attribute__ ((__packed__)) msg_header {
 	uint32_t magic;
 	char command[12];
 	uint32_t length;
