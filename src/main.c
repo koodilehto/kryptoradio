@@ -136,7 +136,22 @@ int main(int argc, char *argv[])
 				}
 				printf("\n");
 			}
+
+			// Payload in getdata request is identical to
+			// inv and because the command name is shorter
+			// in inv, we may just alter the inv to
+			// getdata and send the payload back. The
+			// checksum is not affected because it is
+			// calculated from payload only.
+			strcpy(buf->command,"getdata");
+
+			if (fwrite(buf,sizeof(struct msg)+buf->length,1,bitcoind) != 1) {
+			 	errx(2,"Sending of getdata has failed");
+			}
 		}
+
+		// Make sure debugging strings are printed
+		fflush(stdout);
 	}
 
 	// Never reached
