@@ -31,6 +31,8 @@ uint8_t join_message[] = {
 	0xC0, 0x3E, 0x03, 0x00
 };
 
+const int join_message_len = sizeof(join_message);
+
 struct __attribute__ ((__packed__)) msg_header {
 	uint32_t magic;
 	char command[12];
@@ -38,12 +40,17 @@ struct __attribute__ ((__packed__)) msg_header {
 	uint32_t checksum;
 };
 
-const int join_message_len = sizeof(join_message);
+struct __attribute__ ((__packed__)) msg_inv_vect {
+	uint32_t type;
+	char hash[32];
+};
+
+uint64_t var_int(uint8_t *buf);
+int var_int_len(uint8_t *buf);
 
 int main(int argc, char *argv[])
 {
-	int sockfd = 0, n = 0;
-	char recvBuff[1024];
+	int sockfd;
 	struct sockaddr_in serv_addr; 
 
 	if(argc != 2) {
@@ -81,9 +88,10 @@ int main(int argc, char *argv[])
 	// Message receiver loop. Processes messages having this format:
 	// https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
 	while (true) {
-		// Take header
 		struct msg_header header;
+		uint8_t payload[1024];
 
+		// Take header
 		if (fread(&header,sizeof(header),1,bitcoind) != 1) {
 			errx(3,"Receiving data from bitcoind has failed");
 		}
@@ -92,14 +100,47 @@ int main(int argc, char *argv[])
 
 		printf("%s, %d tavua.\n",header.command,header.length);
 
-		if (header.length > sizeof(recvBuff)) {
+		if (header.length > sizeof(payload)) {
 			errx(4,"Too small receive buffer, exiting.");
 		}
 
-		if (header.length != 0 && fread(recvBuff,header.length,1,bitcoind) != 1) {
+		if (header.length != 0 && fread(payload,header.length,1,bitcoind) != 1) {
 			errx(3,"Receiving data from bitcoind has failed");
+		}
+
+		// Parsing it
+		if (strcmp(header.command,"inv") == 0) {
+			// Match structure to data
+			uint64_t invs = var_int(payload);
+			struct msg_inv_vect *inv =
+				(struct msg_inv_vect*)(payload+var_int_len(payload));
+			
+			// Pretty-print transaction hash
+			for (uint64_t i = 0; i<invs; i++) {
+				printf("inv #%d: ",i);
+				for (int j=31; j>=0; j--) {
+					printf("%02hhx",inv[i].hash[j]);
+				}
+				printf("\n");
+			}
 		}
 	}
 
 	// Never reached
+}
+
+uint64_t var_int(uint8_t *buf)
+{
+	if (*buf == 0xfd) return *(uint16_t*)(buf+1);
+	if (*buf == 0xfe) return *(uint32_t*)(buf+1);
+	if (*buf == 0xff) return *(uint64_t*)(buf+1);
+	return *buf;
+}
+
+int var_int_len(uint8_t *buf)
+{
+	if (*buf == 0xfd) return 3;
+	if (*buf == 0xfe) return 5;
+	if (*buf == 0xff) return 9;
+	return 1;
 }
