@@ -188,6 +188,16 @@ char *hex256(const unsigned char *in)
 
 void log_msg(struct msg *m)
 {
+	int hash_end = m->length;
+
+	if (strcmp(m->command,"inv") == 0) {
+		// Inventory messages may be dropped from logs
+		return;
+	} else if (strcmp(m->command,"block") == 0) {
+		// Block hash is calculated only from 6 first fields
+		hash_end = 4+32+32+4+4+4;
+	}
+	
 	// Prepare path name.
 	char pathname[4+11+1];
 	snprintf(pathname,sizeof(pathname),"log/%s",m->command);
@@ -199,7 +209,7 @@ void log_msg(struct msg *m)
 	// Prepare file name
 	char filename[4+11+1+64+1];
 	snprintf(filename,sizeof(filename),
-		 "log/%s/%s",m->command,hex256(dhash(m->payload,m->length)));
+		 "log/%s/%s",m->command,hex256(dhash(m->payload,hash_end)));
 
 	// Open file
 	FILE *f = fopen(filename,"wb");
