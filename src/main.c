@@ -2,7 +2,9 @@
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
+#include <errno.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -10,7 +12,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-//#include <errno.h>
 #include <arpa/inet.h> 
 #include <err.h>
 #include <stdbool.h>
@@ -44,7 +45,7 @@ struct __attribute__ ((__packed__)) msg {
 
 struct __attribute__ ((__packed__)) msg_inv_vect {
 	uint32_t type;
-	char hash[32];
+	unsigned char hash[32];
 };
 
 // Prototypes
@@ -53,6 +54,7 @@ int var_int_len(uint8_t *buf);
 uint32_t checksum(struct msg *m);
 unsigned char *dhash(const unsigned char *d, unsigned long n);
 char *hex256(const unsigned char *buf);
+void log_msg(struct msg *m);
 
 int main(int argc, char *argv[])
 {
@@ -107,8 +109,6 @@ int main(int argc, char *argv[])
 
 		// FIXME One should swap byte ordering on big-endian machines!
 
-		printf("%s, %d tavua.\n",buf->command,buf->length);
-
 		// Scaling the buffer
 		buf_len = sizeof(struct msg)+buf->length;
 		buf = realloc(buf, buf_len);
@@ -124,20 +124,11 @@ int main(int argc, char *argv[])
 			errx(3,"Checksum error. Probably we got out of sync.");
 		}
 
+		// Store to flat files
+		log_msg(buf);
+
 		// Message valid, parsing it
 		if (strcmp(buf->command,"inv") == 0) {
-			// Got inv, requesting content
-
-			// Match structure to data
-			uint64_t invs = var_int(buf->payload);
-			struct msg_inv_vect *inv =
-				(struct msg_inv_vect*)(buf->payload+var_int_len(buf->payload));
-			
-			// Pretty-print transaction hash
-			for (uint64_t i = 0; i<invs; i++) {
-				printf("inv #%d: %s\n",i,hex256(inv[i].hash));
-			}
-
 			// Payload in getdata request is identical to
 			// inv and because the command name is shorter
 			// in inv, we may just alter the inv to
@@ -193,4 +184,35 @@ char *hex256(const unsigned char *in)
 	}
 
 	return out;
+}
+
+void log_msg(struct msg *m)
+{
+	// Prepare path name.
+	char pathname[4+11+1];
+	snprintf(pathname,sizeof(pathname),"log/%s",m->command);
+
+	// Create directory. If already exists, ignore error.
+	int ret = mkdir(pathname,0777);
+	if (ret != 0 && errno != EEXIST) err(5,"Unable to create directory %s",pathname);
+
+	// Prepare file name
+	char filename[4+11+1+64+1];
+	snprintf(filename,sizeof(filename),
+		 "log/%s/%s",m->command,hex256(dhash(m->payload,m->length)));
+
+	// Open file
+	FILE *f = fopen(filename,"wb");
+	if (f == NULL) err(5,"Unable to open file for writing %s",filename);
+	
+	// Store data to file
+	if (m->length > 0 && fwrite(m->payload,m->length,1,f) != 1) {
+		errx(5,"Storing message to log file has failed");
+	}
+
+	// Closing log file
+	if (fclose(f) != 0) err(5,"Closing log file has failed");
+
+	// Report what's done
+	printf("Storing %s\n",filename);
 }
