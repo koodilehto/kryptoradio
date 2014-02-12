@@ -198,7 +198,9 @@ void log_msg(struct msg *m)
 		hash_end = 4+32+32+4+4+4;
 	}
 	
-	// Prepare path name.
+	// Prepare path name. FIXME this has security issue if command
+	// string contains slashes. Not a problem if you connect to a
+	// trusted peer, though.
 	char pathname[4+11+1];
 	snprintf(pathname,sizeof(pathname),"log/%s",m->command);
 
