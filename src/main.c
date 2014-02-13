@@ -141,9 +141,6 @@ int main(int argc, char *argv[])
 			 	errx(2,"Sending of getdata has failed");
 			}
 		}
-
-		// Make sure debugging strings are printed
-		fflush(stdout);
 	}
 
 	// Never reached
@@ -227,4 +224,7 @@ void log_msg(struct msg *m)
 
 	// Report what's done
 	printf("Storing %s\n",filename);
+
+	// Make sure debugging strings are printed
+	fflush(stdout);
 }
