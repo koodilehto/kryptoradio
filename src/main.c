@@ -111,17 +111,17 @@ void process(int bitcoind)
 	static int buf_pos = 0;
 	static int buf_left = sizeof(struct msg);
 
-	while (buf_left > 0) {
-		int got = read(bitcoind,(void*)buf+buf_pos,buf_left);
-		if (got == 0) {
-			errx(3,"Unexpected end of bitcoind stream");
-		} else if (got == -1) {
-			err(3,"Error reading bitcoind stream");
-		}
-		buf_pos += got;
-		buf_left -= got;
-		printf("left %d, pos %d, got %d\n",buf_left,buf_pos,got);fflush(stdout);
+	int got = read(bitcoind,(void*)buf+buf_pos,buf_left);
+	if (got == 0) {
+		errx(3,"Unexpected end of bitcoind stream");
+	} else if (got == -1) {
+		err(3,"Error reading bitcoind stream");
 	}
+	buf_pos += got;
+	buf_left -= got;
+
+	// If not everything is received yet, come back later
+	if (buf_left > 0) return;
 
 	// FIXME One should swap byte ordering on big-endian machines!
 
