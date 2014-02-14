@@ -2,10 +2,12 @@
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
+#include <poll.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -58,11 +60,12 @@ uint32_t checksum(struct msg *m);
 unsigned char *dhash(const unsigned char *d, unsigned long n);
 char *hex256(const unsigned char *buf);
 void log_msg(struct msg *m);
-void process(int bitcoind);
+void process(int fd);
+void serial(int fd);
 
 int main(int argc, char *argv[])
 {
-	int sockfd;
+	int node_fd;
 	struct sockaddr_in serv_addr;
 	// Allocate only minimal buffer at the beginning
 	buf = malloc(sizeof(struct msg));
@@ -70,11 +73,22 @@ int main(int argc, char *argv[])
 		errx(5,"Memory allocation failed");
 	}
 
-	if(argc != 2) {
-		errx(1,"Usage: %s <ip of server>",argv[0]);
+	if(argc != 3) {
+		errx(1,"Usage: %s <ip of server> <serial_port>",argv[0]);
 	} 
 
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	// Prepare serial port
+	
+	// TODO baud rate
+
+	int dev_fd = open(argv[2],O_WRONLY|O_NOCTTY);
+	if (dev_fd == -1) {
+		err(2,"Unable to open serial port %s",argv[2]);
+	}
+
+	// Prepare socket
+
+	if((node_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		err(2,"Could not create socket");
 	}
 
@@ -87,37 +101,38 @@ int main(int argc, char *argv[])
 		errx(1,"IP address conversion failed");
 	} 
 
-	if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		err(2,"Connect Failed");
-	} 
+	if(connect(node_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+		err(2,"Connect failed");
+	}
 
 	// Send greeting
-	if (write(sockfd, join_message, join_message_len) != join_message_len) {
+	if (write(node_fd, join_message, join_message_len) != join_message_len) {
 		err(2,"Sending of welcome message has failed");
 	}
 
-	fd_set rfds;
-	FD_ZERO(&rfds);
-	FD_SET(sockfd, &rfds);
-
 	printf("Connected.\n");
+
+	struct pollfd fds[] = {{dev_fd,POLLOUT,0},{node_fd,POLLIN,0}};
 
 	// Process messages forever
 	while (true) {
-		int ret = select(sockfd+1,&rfds,NULL,NULL,NULL);
-		if (ret == -1) err(5,"Error while listening");
-		if (FD_ISSET(sockfd,&rfds)) process(sockfd);
+		int ret = poll(fds,2,-1);
+		if (ret < 1) err(5,"Error while polling");
+
+		// Always serve slow serial first
+		if (fds[0].revents & POLLOUT) serial(dev_fd);
+		if (fds[1].revents & POLLIN) process(node_fd);
 	}
 }
 
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
-void process(int bitcoind)
+void process(int fd)
 {
 	static int buf_pos = 0;
 	static int buf_left = sizeof(struct msg);
 
-	int got = read(bitcoind,(void*)buf+buf_pos,buf_left);
+	int got = read(fd,(void*)buf+buf_pos,buf_left);
 	if (got == 0) {
 		errx(3,"Unexpected end of bitcoind stream");
 	} else if (got == -1) {
@@ -159,7 +174,7 @@ void process(int bitcoind)
 			// calculated from payload only.
 			strcpy(buf->command,"getdata");
 
-			if (write(bitcoind,buf,sizeof(struct msg)+buf->length) != sizeof(struct msg)+buf->length) {
+			if (write(fd,buf,sizeof(struct msg)+buf->length) != sizeof(struct msg)+buf->length) {
 				err(2,"Sending of getdata has failed");
 			}
 		}
@@ -168,6 +183,20 @@ void process(int bitcoind)
 		buf_pos = 0;
 		buf_left = sizeof(struct msg);
 	}
+}
+
+void serial(int devfd) {
+	// Just dummy writer for generating much traffic to serial
+	static uint8_t i=0;
+	char instanssi[43];
+	snprintf(instanssi,sizeof(instanssi),
+		 "Kissa kissa kissa kissa... Instanssi! %3hhu\n",
+		 i++);
+
+	// Write the output. Do not care if some output is ignored.
+	int ret = write(devfd,instanssi,sizeof(instanssi)-1);
+	if (ret < 1) err(4,"Unable to write to serial port");
+	printf("sent %d bytes to serial port\n",ret);
 }
 
 uint64_t var_int(uint8_t *buf)
