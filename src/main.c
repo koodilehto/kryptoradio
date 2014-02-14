@@ -58,7 +58,7 @@ uint32_t checksum(struct msg *m);
 unsigned char *dhash(const unsigned char *d, unsigned long n);
 char *hex256(const unsigned char *buf);
 void log_msg(struct msg *m);
-void process(FILE *bitcoind);
+void process(int bitcoind);
 
 int main(int argc, char *argv[])
 {
@@ -91,64 +91,76 @@ int main(int argc, char *argv[])
 		err(2,"Connect Failed");
 	} 
 
-	// Making FILE from socket fd
-	FILE *bitcoind = fdopen(sockfd,"r+");
-	if (bitcoind == NULL) err(2,"Buffered reader has failed");
-
 	// Send greeting
-	if (fwrite(join_message,join_message_len,1,bitcoind) != 1) {
-		errx(2,"Sending of welcome message has failed");
+	if (write(sockfd, join_message, join_message_len) != join_message_len) {
+		err(2,"Sending of welcome message has failed");
 	}
 
 	printf("Connected.\n");
 
 	// Process messages forever
 	while (true) {
-		process(bitcoind);
+		process(sockfd);
 	}
 }
 
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
-void process(FILE *bitcoind)
+void process(int bitcoind)
 {
-	// Take header
-	if (fread(buf,sizeof(struct msg),1,bitcoind) != 1) {
-		errx(3,"Receiving data from bitcoind has failed");
+	static int buf_pos = 0;
+	static int buf_left = sizeof(struct msg);
+
+	while (buf_left > 0) {
+		int got = read(bitcoind,(void*)buf+buf_pos,buf_left);
+		if (got == 0) {
+			errx(3,"Unexpected end of bitcoind stream");
+		} else if (got == -1) {
+			err(3,"Error reading bitcoind stream");
+		}
+		buf_pos += got;
+		buf_left -= got;
+		printf("left %d, pos %d, got %d\n",buf_left,buf_pos,got);fflush(stdout);
 	}
 
 	// FIXME One should swap byte ordering on big-endian machines!
 
-	// Scaling the buffer
-	buf = realloc(buf, sizeof(struct msg)+buf->length);
-	if (buf == NULL) {
-		errx(5,"Memory allocation failed");
-	}
-
-	if (buf->length != 0 && fread(buf->payload,buf->length,1,bitcoind) != 1) {
-		errx(3,"Receiving data from bitcoind has failed");
-	}
-
-	if (checksum(buf) != buf->checksum) {
-		errx(3,"Checksum error. Probably we got out of sync.");
-	}
-
-	// Store to flat files
-	log_msg(buf);
-
-	// Message valid, parsing it
-	if (strcmp(buf->command,"inv") == 0) {
-		// Payload in getdata request is identical to
-		// inv and because the command name is shorter
-		// in inv, we may just alter the inv to
-		// getdata and send the payload back. The
-		// checksum is not affected because it is
-		// calculated from payload only.
-		strcpy(buf->command,"getdata");
-
-		if (fwrite(buf,sizeof(struct msg)+buf->length,1,bitcoind) != 1) {
-			errx(2,"Sending of getdata has failed");
+	if (buf_pos == sizeof(struct msg) && buf->length != 0) {
+		// Header received. scaling the buffer to fit payload
+		buf = realloc(buf, sizeof(struct msg)+buf->length);
+		if (buf == NULL) {
+			errx(5,"Memory allocation failed");
 		}
+
+		// Continue reading
+		buf_left = buf->length;
+	} else {
+		// All payload received. Process content
+		if (checksum(buf) != buf->checksum) {
+			errx(3,"Checksum error. Probably we got out of sync.");
+		}
+
+		// Store to flat files
+		log_msg(buf);
+
+		// Message valid, parsing it
+		if (strcmp(buf->command,"inv") == 0) {
+			// Payload in getdata request is identical to
+			// inv and because the command name is shorter
+			// in inv, we may just alter the inv to
+			// getdata and send the payload back. The
+			// checksum is not affected because it is
+			// calculated from payload only.
+			strcpy(buf->command,"getdata");
+
+			if (write(bitcoind,buf,sizeof(struct msg)+buf->length) != sizeof(struct msg)+buf->length) {
+				err(2,"Sending of getdata has failed");
+			}
+		}
+
+		// Start reading from top
+		buf_pos = 0;
+		buf_left = sizeof(struct msg);
 	}
 }
 
