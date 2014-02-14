@@ -96,11 +96,17 @@ int main(int argc, char *argv[])
 		err(2,"Sending of welcome message has failed");
 	}
 
+	fd_set rfds;
+	FD_ZERO(&rfds);
+	FD_SET(sockfd, &rfds);
+
 	printf("Connected.\n");
 
 	// Process messages forever
 	while (true) {
-		process(sockfd);
+		int ret = select(sockfd+1,&rfds,NULL,NULL,NULL);
+		if (ret == -1) err(5,"Error while listening");
+		if (FD_ISSET(sockfd,&rfds)) process(sockfd);
 	}
 }
 
