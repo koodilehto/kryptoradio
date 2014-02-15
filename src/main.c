@@ -89,12 +89,14 @@ int main(int argc, char *argv[])
 		errx(1,"IP address conversion failed");
 	} 
 
-	if(connect(node_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+	if(connect(node_fd, (struct sockaddr *)&serv_addr,
+		   sizeof(serv_addr)) < 0)
+	{
 		err(2,"Connect failed");
 	}
 
 	// Send greeting
-	if (write(node_fd, join_message, join_message_len) != join_message_len) {
+	if (write(node_fd,join_message,join_message_len) != join_message_len) {
 		err(2,"Sending of welcome message has failed");
 	}
 
@@ -256,7 +258,8 @@ void log_msg(const struct msg *const m)
 
 	// Create directory. If already exists, ignore error.
 	const int ret = mkdir(pathname,0777);
-	if (ret != 0 && errno != EEXIST) err(5,"Unable to create directory %s",pathname);
+	if (ret != 0 && errno != EEXIST) err(5,"Unable to create directory %s",
+					     pathname);
 
 	// Prepare file name
 	char filename[4+11+1+64+1];
