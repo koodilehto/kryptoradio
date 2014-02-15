@@ -50,9 +50,6 @@ struct __attribute__ ((__packed__)) msg_inv_vect {
 	unsigned char hash[32];
 };
 
-// Globals
-struct msg *buf; // Always enough to fit struct msg without payload
-
 // Prototypes
 uint64_t var_int(uint8_t *buf);
 int var_int_len(uint8_t *buf);
@@ -67,11 +64,6 @@ int main(int argc, char *argv[])
 {
 	int node_fd;
 	struct sockaddr_in serv_addr;
-	// Allocate only minimal buffer at the beginning
-	buf = malloc(sizeof(struct msg));
-	if (buf == NULL) {
-		errx(5,"Memory allocation failed");
-	}
 
 	if(argc != 3) {
 		errx(1,"Usage: %s <ip of server> <serial_port>",argv[0]);
@@ -129,8 +121,15 @@ int main(int argc, char *argv[])
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
 void process(int fd)
 {
+	static struct msg *buf = NULL; // For storing the message payload
 	static int buf_pos = 0;
 	static int buf_left = sizeof(struct msg);
+
+	// Reallocate buffer to fit everything we need
+	buf = realloc(buf,buf_pos+buf_left);
+	if (buf == NULL) {
+		errx(5,"Memory allocation failed");
+	}
 
 	int got = read(fd,(void*)buf+buf_pos,buf_left);
 	if (got == 0) {
@@ -147,16 +146,11 @@ void process(int fd)
 	// FIXME One should swap byte ordering on big-endian machines!
 
 	if (buf_pos == sizeof(struct msg) && buf->length != 0) {
-		// Header received. scaling the buffer to fit payload
-		buf = realloc(buf, sizeof(struct msg)+buf->length);
-		if (buf == NULL) {
-			errx(5,"Memory allocation failed");
-		}
-
-		// Continue reading
+		// Header received. To continue reading in next pass,
+		// update the message length.
 		buf_left = buf->length;
 	} else {
-		// All payload received. Process content
+		// All payload received. Process content.
 		if (checksum(buf) != buf->checksum) {
 			errx(3,"Checksum error. Probably we got out of sync.");
 		}
