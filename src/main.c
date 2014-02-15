@@ -122,13 +122,14 @@ int main(int argc, char *argv[])
 void process(int fd)
 {
 	static struct msg *buf = NULL; // For storing the message payload
+	static int buf_allocated = 0;
 	static int buf_pos = 0;
 	static int buf_left = sizeof(struct msg);
 
-	// Reallocate buffer to fit everything we need
-	buf = realloc(buf,buf_pos+buf_left);
-	if (buf == NULL) {
-		errx(5,"Memory allocation failed");
+	// Reallocate buffer only if it is too small.
+	if (buf_allocated < buf_pos+buf_left) {
+		buf = realloc(buf,buf_pos+buf_left);
+		if (buf == NULL) errx(5,"Memory allocation failed");
 	}
 
 	int got = read(fd,(void*)buf+buf_pos,buf_left);
