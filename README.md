@@ -23,7 +23,7 @@ Install the following packages (moreutils is just needed for `ts`):
 
 Then compile:
 
-    gcc -Wall -std=gnu99 main.c `pkg-config --libs --cflags openssl`
+    gcc -Wall -std=gnu99 main.c `pkg-config --libs --cflags openssl` `pkg-config --cflags --libs glib-2.0`
 
 ## Running
 

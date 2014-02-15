@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "linux" -*-
+/* -*- mode: c; c-file-style: "linux"; compile-command: "gcc -Wall -std=gnu99 main.c `pkg-config --libs --cflags openssl` `pkg-config --cflags --libs glib-2.0`" -*-
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
@@ -18,8 +18,9 @@
 #include <err.h>
 #include <stdbool.h>
 #include <openssl/sha.h>
+#include <glib.h>
 
-uint8_t join_message[] = {
+guint8 join_message[] = {
 	0xF9, 0xBE, 0xB4, 0xD9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6F,
 	0x6E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00,
 	0x35, 0x8D, 0x49, 0x32, 0x62, 0xEA, 0x00, 0x00, 0x01, 0x00,
@@ -38,33 +39,25 @@ uint8_t join_message[] = {
 const int join_message_len = sizeof(join_message);
 
 struct __attribute__ ((__packed__)) msg {
-	uint32_t magic;
+	guint32 magic;
 	char command[12];
-	uint32_t length;
-	uint32_t checksum;
-	uint8_t payload[];
-};
-
-struct __attribute__ ((__packed__)) msg_inv_vect {
-	uint32_t type;
-	unsigned char hash[32];
+	guint32 length_le; // Little-endian!
+	guint32 checksum;
+	guint8 payload[];
 };
 
 // Prototypes
-uint64_t var_int(uint8_t *buf);
-int var_int_len(uint8_t *buf);
-uint32_t checksum(struct msg *m);
-unsigned char *dhash(const unsigned char *d, unsigned long n);
-char *hex256(const unsigned char *buf);
-void log_msg(struct msg *m);
-void process(int fd);
-void serial(int fd);
+guint64 var_int(const guint8 *const buf);
+gint var_int_len(const guint8 *const buf);
+guint32 checksum(const struct msg *const m);
+unsigned char *dhash(const guchar *const d, const gulong n);
+char *hex256(const guchar *const buf);
+void log_msg(const struct msg *const m);
+void process(const int fd);
+void serial(const int fd);
 
 int main(int argc, char *argv[])
 {
-	int node_fd;
-	struct sockaddr_in serv_addr;
-
 	if(argc != 3) {
 		errx(1,"Usage: %s <ip of server> <serial_port>",argv[0]);
 	} 
@@ -79,6 +72,9 @@ int main(int argc, char *argv[])
 	}
 
 	// Prepare socket
+
+	int node_fd;
+	struct sockaddr_in serv_addr;
 
 	if((node_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		err(2,"Could not create socket");
@@ -108,7 +104,7 @@ int main(int argc, char *argv[])
 
 	// Process messages forever
 	while (true) {
-		int ret = poll(fds,2,-1);
+		const int ret = poll(fds,2,-1);
 		if (ret < 1) err(5,"Error while polling");
 
 		// Always serve slow serial first
@@ -119,7 +115,7 @@ int main(int argc, char *argv[])
 
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
-void process(int fd)
+void process(const int fd)
 {
 	static struct msg *buf = NULL; // For storing the message payload
 	static int buf_allocated = 0;
@@ -132,7 +128,7 @@ void process(int fd)
 		if (buf == NULL) errx(5,"Memory allocation failed");
 	}
 
-	int got = read(fd,(void*)buf+buf_pos,buf_left);
+	const int got = read(fd,(void*)buf+buf_pos,buf_left);
 	if (got == 0) {
 		errx(3,"Unexpected end of bitcoind stream");
 	} else if (got == -1) {
@@ -144,12 +140,13 @@ void process(int fd)
 	// If not everything is received yet, come back later
 	if (buf_left > 0) return;
 
-	// FIXME One should swap byte ordering on big-endian machines!
+	// Swapping byte ordering of length
+	const guint32 payload_len = GUINT32_FROM_LE(buf->length_le);
 
-	if (buf_pos == sizeof(struct msg) && buf->length != 0) {
+	if (buf_pos == sizeof(struct msg) && payload_len != 0) {
 		// Header received. To continue reading in next pass,
 		// update the message length.
-		buf_left = buf->length;
+		buf_left = payload_len;
 	} else {
 		// All payload received. Process content.
 		if (checksum(buf) != buf->checksum) {
@@ -187,29 +184,29 @@ void process(int fd)
 	}
 }
 
-void serial(int devfd) {
+void serial(const int devfd) {
 	// Just dummy writer for generating much traffic to serial
-	static uint8_t i=0;
+	static guint8 i=0;
 	char instanssi[43];
 	snprintf(instanssi,sizeof(instanssi),
 		 "Kissa kissa kissa kissa... Instanssi! %3hhu\n",
 		 i++);
 
 	// Write the output. Do not care if some output is ignored.
-	int ret = write(devfd,instanssi,sizeof(instanssi)-1);
+	const int ret = write(devfd,instanssi,sizeof(instanssi)-1);
 	if (ret < 1) err(4,"Unable to write to serial port");
 	printf("sent %d bytes to serial port\n",ret);
 }
 
-uint64_t var_int(uint8_t *buf)
+guint64 var_int(const guint8 *const buf)
 {
-	if (*buf == 0xfd) return *(uint16_t*)(buf+1);
-	if (*buf == 0xfe) return *(uint32_t*)(buf+1);
-	if (*buf == 0xff) return *(uint64_t*)(buf+1);
+	if (*buf == 0xfd) return GUINT16_FROM_LE(*(guint16*)(buf+1));
+	if (*buf == 0xfe) return GUINT32_FROM_LE(*(guint32*)(buf+1));
+	if (*buf == 0xff) return GUINT64_FROM_LE(*(guint64*)(buf+1));
 	return *buf;
 }
 
-int var_int_len(uint8_t *buf)
+int var_int_len(const guint8 *const buf)
 {
 	if (*buf == 0xfd) return 3;
 	if (*buf == 0xfe) return 5;
@@ -217,17 +214,17 @@ int var_int_len(uint8_t *buf)
 	return 1;
 }
 
-uint32_t checksum(struct msg *m)
+guint32 checksum(const struct msg *const m)
 {
-	return *(uint32_t*)dhash(m->payload,m->length);
+	return *(guint32*)dhash(m->payload,GUINT32_FROM_LE(m->length_le));
 }
 
-unsigned char *dhash(const unsigned char *d, unsigned long n)
+guchar *dhash(const guchar *const d, const gulong n)
 {
 	return SHA256(SHA256(d,n,NULL),32,NULL);
 }
 
-char *hex256(const unsigned char *in)
+gchar *hex256(const guchar *const in)
 {
 	static char out[65];
 
@@ -238,9 +235,10 @@ char *hex256(const unsigned char *in)
 	return out;
 }
 
-void log_msg(struct msg *m)
+void log_msg(const struct msg *const m)
 {
-	int hash_end = m->length;
+	const int payload_len = GUINT32_FROM_LE(m->length_le);
+	int hash_end = payload_len;
 
 	if (strcmp(m->command,"inv") == 0) {
 		// Inventory messages may be dropped from logs
@@ -257,7 +255,7 @@ void log_msg(struct msg *m)
 	snprintf(pathname,sizeof(pathname),"log/%s",m->command);
 
 	// Create directory. If already exists, ignore error.
-	int ret = mkdir(pathname,0777);
+	const int ret = mkdir(pathname,0777);
 	if (ret != 0 && errno != EEXIST) err(5,"Unable to create directory %s",pathname);
 
 	// Prepare file name
@@ -266,11 +264,11 @@ void log_msg(struct msg *m)
 		 "log/%s/%s",m->command,hex256(dhash(m->payload,hash_end)));
 
 	// Open file
-	FILE *f = fopen(filename,"wb");
+	FILE *const f = fopen(filename,"wb");
 	if (f == NULL) err(5,"Unable to open file for writing %s",filename);
 	
 	// Store data to file
-	if (m->length > 0 && fwrite(m->payload,m->length,1,f) != 1) {
+	if (payload_len > 0 && fwrite(m->payload,payload_len,1,f) != 1) {
 		errx(5,"Storing message to log file has failed");
 	}
 
