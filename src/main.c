@@ -161,14 +161,21 @@ void process(int fd)
 
 		// Message valid, parsing it
 		if (strcmp(buf->command,"inv") == 0) {
+			// Requesting transactions and blocks from a peer.
+
 			// Payload in getdata request is identical to
-			// inv and because the command name is shorter
-			// in inv, we may just alter the inv to
-			// getdata and send the payload back. The
-			// checksum is not affected because it is
-			// calculated from payload only.
+			// inv and checksum is not affected because it
+			// is calculated from payload only. We just
+			// need to alter command name and send the
+			// whole blob back to sender.
+
+			// Because the command name is shorter in inv
+			// than in getdata, we may just write over "inv"
+			// and trailing null bytes will be fine.
 			strcpy(buf->command,"getdata");
 
+			// INFO: buf_pos has the total length (header+payload)
+			// TODO: write() may block and become a bottleneck.
 			if (write(fd,buf,buf_pos) != buf_pos) {
 				err(2,"Sending of getdata has failed");
 			}
