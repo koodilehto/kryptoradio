@@ -169,7 +169,7 @@ void process(int fd)
 			// calculated from payload only.
 			strcpy(buf->command,"getdata");
 
-			if (write(fd,buf,sizeof(struct msg)+buf->length) != sizeof(struct msg)+buf->length) {
+			if (write(fd,buf,buf_pos) != buf_pos) {
 				err(2,"Sending of getdata has failed");
 			}
 		}
