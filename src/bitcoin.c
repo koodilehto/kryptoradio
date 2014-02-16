@@ -48,15 +48,15 @@ guint32 checksum(const struct msg *const m)
 
 guchar *dhash(const guchar *const d, const gulong n)
 {
-	return SHA256(SHA256(d,n,NULL),32,NULL);
+	return SHA256(SHA256(d,n,NULL),SHA256_DIGEST_LENGTH,NULL);
 }
 
 gchar *hex256(const guchar *const in)
 {
-	static char out[65];
+	static char out[2*SHA256_DIGEST_LENGTH+1];
 
-	for (int i=0; i<32; i++) {
-		snprintf(out+2*i,3,"%02hhx",in[31-i]);
+	for (int i=0; i<SHA256_DIGEST_LENGTH; i++) {
+		snprintf(out+2*i,3,"%02hhx",in[SHA256_DIGEST_LENGTH-1-i]);
 	}
 
 	return out;
