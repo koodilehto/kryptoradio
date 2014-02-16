@@ -54,20 +54,13 @@ guchar *dhash(const guchar *const d, const gulong n)
 
 int bitcoin_hashable_length(const struct msg *const m)
 {
-	const int payload_len = GUINT32_FROM_LE(m->length_le);
-	int hash_end;
-
-	if (strcmp(m->command,"tx") == 0) {
-		// Transaction hash is calculated from whole data
-		return payload_len;
-	}
 	if (strcmp(m->command,"block") == 0) {
 		// Block hash is calculated only from 6 first fields
 		return 4+32+32+4+4+4;
-	} 
-
-	// Inventory item shouldn't be stored
-	return -1;
+	} else {
+		// Use all bytes to calculate the hash
+		return GUINT32_FROM_LE(m->length_le);
+	}
 }
 
 const guchar *const bitcoin_inv_hash(const struct msg *const m)

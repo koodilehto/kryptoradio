@@ -24,9 +24,8 @@ guint32 checksum(const struct msg *const m);
 guchar *dhash(const guchar *const d, const gulong n);
 
 /**
- * Returns number of "meaningful bytes" in an inventory item. Rest are
- * ignored when calculating the hash. If this number is -1, this item
- * has no hash (it is not tx or block).
+ * Returns number of "identifying bytes" in an inventory item. Rest may
+ * ignored when calculating the hash.
  */
 int bitcoin_hashable_length(const struct msg *const m);
 
