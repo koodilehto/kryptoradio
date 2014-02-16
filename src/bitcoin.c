@@ -66,7 +66,6 @@ int bitcoin_hashable_length(const struct msg *const m)
 const guchar *const bitcoin_inv_hash(const struct msg *const m)
 {
 	int hash_end = bitcoin_hashable_length(m);
-	if (hash_end < 0) return NULL;
 	return dhash(m->payload,hash_end);
 }
 
