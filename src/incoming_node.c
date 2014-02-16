@@ -76,6 +76,9 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 		} else if (strcmp(buf->command,"tx") == 0 ||
 			   strcmp(buf->command,"block") == 0 )
 		{
+			if (g_hash_table_contains(inv,buf)) {
+				errx(6,"Protocol error, duplicate message");
+			}
 			g_hash_table_add(inv,buf);
 
 			// Do not reuse block if it is in hash table
