@@ -13,17 +13,19 @@ file. In addition, a stub of serial connectivity has been added.
 
 ## Compiling
 
-Until I decide to write SConstruct file for this project the flow goes like this:
+The project uses SCons for building and requires OpenSSL and GLib.
+Before compiling, install the following packages (moreutils is just
+needed for `ts`):
 
-Install the following packages (moreutils is just needed for `ts`):
-
-    gcc
-    libssl-dev
-    moreutils
+	gcc
+	libssl-dev
+	libglib2.0-dev
+	scons
+	moreutils
 
 Then compile:
 
-    gcc -Wall -std=gnu99 main.c `pkg-config --libs --cflags openssl` `pkg-config --cflags --libs glib-2.0`
+	scons
 
 ## Running
 
@@ -31,8 +33,8 @@ Currently there is no fancy command-line parser. Just give IP of a
 bitcoin network node you trust and serial port device. Any slow enough
 device will do to demonstrate the multitasking. For example:
 
-    mkdir log
-    ./a.out 10.0.0.2 /dev/ttyUSB0 | ts '%Y-%m-%d %H:%M:%S %Z' | tee -a log/received.txt
+	mkdir log
+	./serializer 10.0.0.2 /dev/ttyUSB0 | ts '%Y-%m-%d %H:%M:%S %Z' | tee -a log/received.txt
 
 This should do it.
 

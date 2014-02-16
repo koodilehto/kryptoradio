@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "linux"; compile-command: "gcc -Wall -std=gnu99 main.c `pkg-config --libs --cflags openssl` `pkg-config --cflags --libs glib-2.0`" -*-
+/* -*- mode: c; c-file-style: "linux"; compile-command: "scons -C .." -*-
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
