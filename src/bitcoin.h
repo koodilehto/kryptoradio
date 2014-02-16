@@ -36,4 +36,11 @@ const guchar *const bitcoin_inv_hash(const struct msg *const m);
 char *hex256(const guchar *const buf);
 bool bitcoin_join(int fd);
 
+/**
+ * Returns a new Bitcoin message inventory which uses bitcoin specific
+ * hash calculation and equality test. Only data of type `struct msg`
+ * should be stored here.
+ */
+GHashTable *bitcoin_new_inventory();
+
 #endif /* BITCOIN_H_ */

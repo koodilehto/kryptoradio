@@ -10,6 +10,11 @@
 #include <unistd.h>
 #include "bitcoin.h"
 
+// Local prototypes
+static guint bitcoin_msg_hashtable_hash(gconstpointer key);
+static gboolean bitcoin_msg_eq(gconstpointer a, gconstpointer b);
+
+// Local constants
 static const guint8 join_message[] = {
 	0xF9, 0xBE, 0xB4, 0xD9, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6F,
 	0x6E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00,
@@ -84,4 +89,36 @@ bool bitcoin_join(int fd)
 {
 	return write(fd,join_message,sizeof(join_message)) !=
 		sizeof(join_message);
+}
+
+GHashTable *bitcoin_new_inventory() {
+	return g_hash_table_new(&bitcoin_msg_hashtable_hash,bitcoin_msg_eq);
+}
+
+/**
+ * Calculates a hash for use in Hash Table storage. NB! This hash is
+ * not the same as in Bitcoin Protocol Specification. The risk of
+ * collision is larger but is not fatal because GLib hash table
+ * handles collisions.
+ */
+static guint bitcoin_msg_hashtable_hash(gconstpointer key)
+{
+	// Using checksum as a hash because collisions are not fatal.
+	return ((const struct msg *)key)->checksum;
+}
+
+/**
+ * Compares two messages for equality. It uses optimization where only
+ * relevant parts of the message is compared (only headers are used in
+ * case of a block)
+ */
+static gboolean bitcoin_msg_eq(gconstpointer a, gconstpointer b)
+{	
+	int a_len = bitcoin_hashable_length(a);
+	int b_len = bitcoin_hashable_length(b);
+
+	if (a_len != b_len) return FALSE;
+
+	// a_len == b_len in this case
+	return 0 == memcmp(a,b,sizeof(struct msg)+a_len);
 }

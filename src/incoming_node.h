@@ -2,4 +2,4 @@
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
-void incoming_node_data(const int fd);
+void incoming_node_data(const int fd, GHashTable *const inv);

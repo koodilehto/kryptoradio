@@ -12,7 +12,7 @@
 
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
-void incoming_node_data(const int fd)
+void incoming_node_data(const int fd, GHashTable *const inv)
 {
 	static struct msg *buf = NULL; // For storing the message payload
 	static int buf_allocated = 0;
@@ -73,6 +73,13 @@ void incoming_node_data(const int fd)
 			if (write(fd,buf,buf_pos) != buf_pos) {
 				err(2,"Sending of getdata has failed");
 			}
+		} else if (strcmp(buf->command,"tx") == 0 ||
+			   strcmp(buf->command,"block") == 0 )
+		{
+			g_hash_table_add(inv,buf);
+
+			// Do not reuse block if it is in hash table
+			buf = NULL;
 		}
 
 		// Start reading from top

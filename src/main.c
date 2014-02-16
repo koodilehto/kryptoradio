@@ -60,6 +60,9 @@ int main(int argc, char *argv[])
 		err(2,"Sending of welcome message has failed");
 	}
 
+	// Prepare local data for incoming_node_data
+	GHashTable *const inv = bitcoin_new_inventory();
+
 	printf("Connected.\n");
 
 	struct pollfd fds[] = {{dev_fd,POLLOUT,0},{node_fd,POLLIN,0}};
@@ -71,7 +74,7 @@ int main(int argc, char *argv[])
 
 		// Always serve slow serial first
 		if (fds[0].revents & POLLOUT) serial(dev_fd);
-		if (fds[1].revents & POLLIN) incoming_node_data(node_fd);
+		if (fds[1].revents & POLLIN) incoming_node_data(node_fd,inv);
 	}
 }
 
