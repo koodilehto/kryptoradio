@@ -1,23 +1,9 @@
 # -*- mode: python; coding: utf-8 -*-
-import os
-from pkgconfig import *
+import pkgconfig
 
-env = Environment(ENV=os.environ)
-conf = Configure(env, custom_tests = { 'CheckPKGConfig' : CheckPKGConfig,
-                                       'CheckPKG' : CheckPKG })
-
-if not conf.CheckPKGConfig('0.15.0'):
-     print 'pkg-config >= 0.15.0 not found.'
-     Exit(1)
-
-if not conf.CheckPKG('glib-2.0 >= 2'):
-     print 'glib >= 2 not found.'
-     Exit(1)
-
-if not conf.CheckPKG('openssl >= 1'):
-     print 'openssl >= 1 not found.'
-     Exit(1)
-
+conf = pkgconfig.getConf()
+pkgconfig.ensure(conf,'glib-2.0 >= 2','libglib2.0-dev')
+pkgconfig.ensure(conf,'openssl >= 1','libssl-dev')
 env = conf.Finish()
 
 env.Append(CCFLAGS = "-O2 -g -Wall -std=gnu99")

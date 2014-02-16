@@ -1,4 +1,23 @@
 # -*- mode: python; coding: utf-8 -*-
+import os
+from SCons.Script import *
+
+def getConf():
+    env = Environment(ENV=os.environ)
+    conf = Configure(env, custom_tests = { 'CheckPKGConfig' : CheckPKGConfig,
+                                           'CheckPKG' : CheckPKG })
+
+    if not conf.CheckPKGConfig('0.15.0'):
+        print 'pkg-config >= 0.15.0 not found.'
+        Exit(1)
+
+    return conf
+
+def ensure(conf, name, debian):
+    if not conf.CheckPKG(name):
+        print (name+' not found.')
+        print ("If you have Debian, try: apt-get install "+debian)
+        Exit(1)
 
 def CheckPKGConfig(context, version):
      context.Message( 'Checking for pkg-config... ' )
