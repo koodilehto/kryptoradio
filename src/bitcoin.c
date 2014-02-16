@@ -6,6 +6,7 @@
 #include <openssl/sha.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include "bitcoin.h"
 
@@ -49,6 +50,31 @@ guint32 checksum(const struct msg *const m)
 guchar *dhash(const guchar *const d, const gulong n)
 {
 	return SHA256(SHA256(d,n,NULL),SHA256_DIGEST_LENGTH,NULL);
+}
+
+int bitcoin_hashable_length(const struct msg *const m)
+{
+	const int payload_len = GUINT32_FROM_LE(m->length_le);
+	int hash_end;
+
+	if (strcmp(m->command,"tx") == 0) {
+		// Transaction hash is calculated from whole data
+		return payload_len;
+	}
+	if (strcmp(m->command,"block") == 0) {
+		// Block hash is calculated only from 6 first fields
+		return 4+32+32+4+4+4;
+	} 
+
+	// Inventory item shouldn't be stored
+	return -1;
+}
+
+const guchar *const bitcoin_inv_hash(const struct msg *const m)
+{
+	int hash_end = bitcoin_hashable_length(m);
+	if (hash_end < 0) return NULL;
+	return dhash(m->payload,hash_end);
 }
 
 gchar *hex256(const guchar *const in)
