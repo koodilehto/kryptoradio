@@ -34,7 +34,7 @@ bitcoin network node you trust and serial port device. Any slow enough
 device will do to demonstrate the multitasking. For example:
 
 	mkdir log
-	./serializer 10.0.0.2 /dev/ttyUSB0 | ts '%Y-%m-%d %H:%M:%S %Z' | tee -a log/received.txt
+	./serializer 10.0.0.2 /dev/ttyUSB0 2>&1 | ts '%Y-%m-%d %H:%M:%S %Z' | tee -a log/received.txt
 
 This should do it.
 
