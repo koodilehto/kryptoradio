@@ -2,17 +2,19 @@
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
+#include <err.h>
 #include <glib.h>
 #include <openssl/sha.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "bitcoin.h"
 
 // Local prototypes
-static guint bitcoin_msg_hashtable_hash(gconstpointer key);
-static gboolean bitcoin_msg_eq(gconstpointer a, gconstpointer b);
+static guint dhash_hash(gconstpointer key);
+static gboolean dhash_eq(gconstpointer a, gconstpointer b);
 
 // Local constants
 static const guint8 join_message[] = {
@@ -49,12 +51,12 @@ int var_int_len(const guint8 *const buf)
 
 guint32 checksum(const struct msg *const m)
 {
-	return *(guint32*)dhash(m->payload,GUINT32_FROM_LE(m->length_le));
+	return *(guint32*)dhash(m->payload,GUINT32_FROM_LE(m->length_le),NULL);
 }
 
-guchar *dhash(const guchar *const d, const gulong n)
+guchar *dhash(const guchar *const d, const gulong n, guchar *const md)
 {
-	return SHA256(SHA256(d,n,NULL),SHA256_DIGEST_LENGTH,NULL);
+	return SHA256(SHA256(d,n,NULL),SHA256_DIGEST_LENGTH,md);
 }
 
 int bitcoin_hashable_length(const struct msg *const m)
@@ -70,8 +72,13 @@ int bitcoin_hashable_length(const struct msg *const m)
 
 const guchar *const bitcoin_inv_hash(const struct msg *const m)
 {
+	return bitcoin_inv_hash_buf(m,NULL);
+}
+
+guchar *bitcoin_inv_hash_buf(const struct msg *const m, guchar *const md)
+{
 	int hash_end = bitcoin_hashable_length(m);
-	return dhash(m->payload,hash_end);
+	return dhash(m->payload,hash_end,md);
 }
 
 gchar *hex256(const guchar *const in)
@@ -91,34 +98,46 @@ bool bitcoin_join(int fd)
 		sizeof(join_message);
 }
 
-GHashTable *bitcoin_new_inventory() {
-	return g_hash_table_new(&bitcoin_msg_hashtable_hash,bitcoin_msg_eq);
-}
-
-/**
- * Calculates a hash for use in Hash Table storage. NB! This hash is
- * not the same as in Bitcoin Protocol Specification. The risk of
- * collision is larger but is not fatal because GLib hash table
- * handles collisions.
- */
-static guint bitcoin_msg_hashtable_hash(gconstpointer key)
+GHashTable *bitcoin_new_inventory()
 {
-	// Using checksum as a hash because collisions are not fatal.
-	return ((const struct msg *)key)->checksum;
+	return g_hash_table_new_full(&dhash_hash,dhash_eq,free,free);
+}
+
+bool bitcoin_inv_insert(GHashTable *inv, struct msg *const m)
+{
+	// Allocate buffer for key and calculate hash of a message
+	guchar* key = malloc(SHA256_DIGEST_LENGTH);
+	if (key == NULL) errx(5,"Memory allocation failed");
+	bitcoin_inv_hash_buf(m, key);
+
+	// If key is already stored, do not replace old one
+	if (g_hash_table_contains(inv,key)) {
+		free(key);
+		return false;
+	}
+
+	// Store message
+	g_hash_table_insert(inv,key,m);
+	return true;
 }
 
 /**
- * Compares two messages for equality. It uses optimization where only
- * relevant parts of the message is compared (only headers are used in
- * case of a block)
+ * Calculates a hash for use internally in Hash Table storage. This
+ * hash should not be used outside g_hash_table.
  */
-static gboolean bitcoin_msg_eq(gconstpointer a, gconstpointer b)
+static guint dhash_hash(gconstpointer key)
+{
+	// Truncate first bytes of the key because the key is already
+	// a hash.
+	return *(guint*)key;
+}
+
+/**
+ * Compares two keys for equality. It is used internally in Hash Table
+ * storage.
+ */
+static gboolean dhash_eq(gconstpointer a, gconstpointer b)
 {	
-	int a_len = bitcoin_hashable_length(a);
-	int b_len = bitcoin_hashable_length(b);
-
-	if (a_len != b_len) return FALSE;
-
-	// a_len == b_len in this case
-	return 0 == memcmp(a,b,sizeof(struct msg)+a_len);
+	// The keys are already hashes so comparing them byte-by-byte.
+	return memcmp(a,b,SHA256_DIGEST_LENGTH) == 0;
 }

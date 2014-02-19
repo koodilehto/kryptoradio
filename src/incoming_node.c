@@ -76,18 +76,16 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 		} else if (strcmp(buf->command,"tx") == 0 ||
 			   strcmp(buf->command,"block") == 0 )
 		{
-			if (g_hash_table_contains(inv,buf)) {
+			if (bitcoin_inv_insert(inv,buf)) {
+				// Do not reuse buffer memory because
+				// it is stored to the inventory
+				buf = NULL;
+				buf_allocated = 0;
+			} else {
 				// If already received, do not do anything
 				warnx("Protocol quirk: duplicate %s %s",
 				      buf->command,
 				      hex256(bitcoin_inv_hash(buf)));
-			} else {
-				// Insert to inventory
-				g_hash_table_add(inv,buf);
-				
-				// Do not reuse memory if it is
-				// referenced from hash table
-				buf = NULL;
 			}
 		}
 
