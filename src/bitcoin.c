@@ -15,6 +15,14 @@
 // Local prototypes
 static guint dhash_hash(gconstpointer key);
 static gboolean dhash_eq(gconstpointer a, gconstpointer b);
+static enum msg_type find_type(const struct msg *m);
+static gint comparator(gconstpointer a, gconstpointer b, gpointer user_data);
+
+enum msg_type {
+   OTHER,
+   TX,
+   BLOCK
+};
 
 // Local constants
 static const guint8 join_message[] = {
@@ -140,4 +148,49 @@ static gboolean dhash_eq(gconstpointer a, gconstpointer b)
 {	
 	// The keys are already hashes so comparing them byte-by-byte.
 	return memcmp(a,b,SHA256_DIGEST_LENGTH) == 0;
+}
+
+static enum msg_type find_type(const struct msg *m)
+{
+	if (strcmp(m->command,"block") == 0) return BLOCK;
+	if (strcmp(m->command,"tx") == 0) return TX;
+	return OTHER;
+}
+
+/**
+ * Comparator of given inventory hashes. Hash table should be passed
+ * as the user_data.
+ */
+static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
+{
+	const struct msg *msg_a = g_hash_table_lookup(inv,a);
+	const struct msg *msg_b = g_hash_table_lookup(inv,b);
+
+	if (msg_a == NULL || msg_b == NULL) {
+		errx(9,"Inventory hash lookup failed. a=%s b=%s",
+		     (char *)a,(char *)b);
+	}
+
+	enum msg_type type_a = find_type(a);
+	enum msg_type type_b = find_type(b);
+
+	// Sort by type if possible
+	if (type_a != type_b) return type_b-type_a;
+
+	// TODO Compare transaction priority using Satoshi's
+	// algoritm. Meanwhile transactions are considered to have
+	// equal priority
+	if (type_a == TX) return 0; // tie
+
+	// Blocks are sorted by creation date. Earlier one has a priority
+	if (type_a == BLOCK) {
+		const struct block *block_a = (struct block *)(msg_a->payload);
+		const struct block *block_b = (struct block *)(msg_b->payload);
+		return 
+			GUINT32_FROM_LE(block_a->timestamp_le) - 
+			GUINT32_FROM_LE(block_b->timestamp_le);
+	}
+
+	// If both are OTHER, consider it a tie
+	return 0;
 }

@@ -8,12 +8,30 @@
 #include <glib.h>
 #include <stdbool.h>
 
+/**
+ * Data type for message structure.
+ * https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
+ */
 struct __attribute__ ((__packed__)) msg {
 	guint32 magic;
 	char command[12];
 	guint32 length_le; // Little-endian!
 	guint32 checksum;
 	guint8 payload[];
+};
+
+/**
+ * Data type for block which is a contained in payload of msg.
+ * https://en.bitcoin.it/wiki/Protocol_specification#block
+ */
+struct __attribute__ ((__packed__)) block {
+	guint32 version;
+	guint8 prev_block[32];
+	guint8 merkle_root[32];
+	guint32 timestamp_le; // Little-endian!
+	guint32 bits_le; // Calculated difficulty, little-endian!
+	guint32 nonche;
+	guint8 txs[]; // Transaction count and list of transactions
 };
 
 // TODO function comments
