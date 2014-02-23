@@ -6,7 +6,6 @@
 #include <errno.h>
 #include <glib.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -15,9 +14,6 @@
 
 void log_msg(const struct msg *const m)
 {
-	// Do not log invs
-	if (!strcmp(m->command,"inv")) return; 
-
 	// Prepare path name. FIXME this has security issue if command
 	// string contains slashes. Not a problem if you connect to a
 	// trusted peer, though.

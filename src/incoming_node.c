@@ -50,10 +50,10 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 			errx(3,"Checksum error. Probably we got out of sync.");
 		}
 
-		// Store to flat files
-		log_msg(buf);
-
 		enum msg_type buf_type = bitcoin_find_type(buf);
+
+		// Log message to a flat file (all but invs)
+		if (buf_type != INV) log_msg(buf);
 
 		// Message valid, parsing it
 		switch (buf_type) {
