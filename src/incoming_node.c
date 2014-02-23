@@ -53,8 +53,11 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 		// Store to flat files
 		log_msg(buf);
 
+		enum msg_type buf_type = bitcoin_find_type(buf);
+
 		// Message valid, parsing it
-		if (strcmp(buf->command,"inv") == 0) {
+		switch (buf_type) {
+		case INV:
 			// Requesting transactions and blocks from a peer.
 
 			// Payload in getdata request is identical to
@@ -73,9 +76,10 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 			if (write(fd,buf,buf_pos) != buf_pos) {
 				err(2,"Sending of getdata has failed");
 			}
-		} else if (strcmp(buf->command,"tx") == 0 ||
-			   strcmp(buf->command,"block") == 0 )
-		{
+
+			break;
+		case TX:
+		case BLOCK:
 			if (bitcoin_inv_insert(inv,buf)) {
 				// Do not reuse buffer memory because
 				// it is stored to the inventory
@@ -87,6 +91,10 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 				      buf->command,
 				      hex256(bitcoin_inv_hash(buf)));
 			}
+			break;
+		default:
+			// Unknown message type. Do not process it.
+			break;
 		}
 
 		// Start reading from top

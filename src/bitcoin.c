@@ -15,14 +15,7 @@
 // Local prototypes
 static guint dhash_hash(gconstpointer key);
 static gboolean dhash_eq(gconstpointer a, gconstpointer b);
-static enum msg_type find_type(const struct msg *m);
 static gint comparator(gconstpointer a, gconstpointer b, gpointer user_data);
-
-enum msg_type {
-   OTHER,
-   TX,
-   BLOCK
-};
 
 // Local constants
 static const guint8 join_message[] = {
@@ -150,10 +143,11 @@ static gboolean dhash_eq(gconstpointer a, gconstpointer b)
 	return memcmp(a,b,SHA256_DIGEST_LENGTH) == 0;
 }
 
-static enum msg_type find_type(const struct msg *m)
+enum msg_type bitcoin_find_type(const struct msg *m)
 {
-	if (strcmp(m->command,"block") == 0) return BLOCK;
+	if (strcmp(m->command,"inv") == 0) return INV;
 	if (strcmp(m->command,"tx") == 0) return TX;
+	if (strcmp(m->command,"block") == 0) return BLOCK;
 	return OTHER;
 }
 

@@ -8,6 +8,13 @@
 #include <glib.h>
 #include <stdbool.h>
 
+enum msg_type {
+	OTHER,
+	INV,
+	TX,
+	BLOCK
+};
+
 /**
  * Data type for message structure.
  * https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
@@ -80,5 +87,10 @@ GHashTable *bitcoin_new_inventory();
  * constant pointers to data.
  */
 bool bitcoin_inv_insert(GHashTable *inv, struct msg *const m);
+
+/**
+ * Returns message type of given raw message
+ */
+enum msg_type bitcoin_find_type(const struct msg *m);
 
 #endif /* BITCOIN_H_ */
