@@ -98,6 +98,12 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 		break;
 	case TX:
 	case BLOCK:
+		// Free some memory if the buffer is larger than contents
+		if (buf_allocated != buf_pos) {
+			buf = realloc(buf,buf_pos);
+			if (buf == NULL) errx(5,"Memory compaction failed");
+		}
+
 		if (bitcoin_inv_insert(inv,COMPACT)) {
 			// Do not reuse buffer memory because
 			// it is stored to the inventory
