@@ -64,7 +64,7 @@ int bitcoin_hashable_length(const struct msg *const m)
 {
 	if (m->type == BLOCK) {
 		// Block hash is calculated only from 6 first fields
-		return 4+32+32+4+4+4;
+		return sizeof(m->block);
 	} else {
 		// Use all bytes to calculate the hash
 		return m->length;
