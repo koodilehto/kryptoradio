@@ -18,7 +18,7 @@ void log_msg(const struct msg *const m)
 	// string contains slashes. Not a problem if you connect to a
 	// trusted peer, though.
 	char pathname[4+11+1];
-	snprintf(pathname,sizeof(pathname),"log/%s",m->command);
+	snprintf(pathname,sizeof(pathname),"log/%s",bitcoin_type_str(m));
 
 	// Create directory. If already exists, ignore error.
 	const int ret = mkdir(pathname,0777);
@@ -27,16 +27,15 @@ void log_msg(const struct msg *const m)
 
 	// Prepare file name
 	char filename[4+11+1+64+1];
-	snprintf(filename,sizeof(filename),"log/%s/%s",
-		 m->command,hex256(bitcoin_inv_hash(m)));
+	snprintf(filename,sizeof(filename),"%s/%s",
+		 pathname,hex256(bitcoin_inv_hash(m)));
 
 	// Open file
 	int fd = creat(filename,0666);
 	if (fd == -1) err(5,"Unable to open %s for writing", filename);
 
 	// Store data to file
-	const int payload_len = GUINT32_FROM_LE(m->length_le);
-	if (payload_len > 0 && write(fd,m->payload,payload_len) == -1) {
+	if (m->length > 0 && write(fd,m->payload,m->length) == -1) {
 		err(5,"Storing message to log file has failed");
 	}
 

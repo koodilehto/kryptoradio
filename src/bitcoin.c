@@ -50,7 +50,7 @@ int var_int_len(const guint8 *const buf)
 	return 1;
 }
 
-guint32 checksum(const struct msg *const m)
+guint32 checksum(const struct msg_wire *const m)
 {
 	return *(guint32*)dhash(m->payload,GUINT32_FROM_LE(m->length_le),NULL);
 }
@@ -62,12 +62,12 @@ guchar *dhash(const guchar *const d, const gulong n, guchar *const md)
 
 int bitcoin_hashable_length(const struct msg *const m)
 {
-	if (strcmp(m->command,"block") == 0) {
+	if (m->type == BLOCK) {
 		// Block hash is calculated only from 6 first fields
 		return 4+32+32+4+4+4;
 	} else {
 		// Use all bytes to calculate the hash
-		return GUINT32_FROM_LE(m->length_le);
+		return m->length;
 	}
 }
 
@@ -143,12 +143,28 @@ static gboolean dhash_eq(gconstpointer a, gconstpointer b)
 	return memcmp(a,b,SHA256_DIGEST_LENGTH) == 0;
 }
 
-enum msg_type bitcoin_find_type(const struct msg *m)
+enum msg_type bitcoin_find_type(const struct msg_wire *m)
 {
-	if (strcmp(m->command,"inv") == 0) return INV;
-	if (strcmp(m->command,"tx") == 0) return TX;
-	if (strcmp(m->command,"block") == 0) return BLOCK;
+	if (strcmp(m->command,"inv"    ) == 0) return INV;
+	if (strcmp(m->command,"tx"     ) == 0) return TX;
+	if (strcmp(m->command,"block"  ) == 0) return BLOCK;
+	if (strcmp(m->command,"addr"   ) == 0) return ADDR;
+	if (strcmp(m->command,"version") == 0) return VERSION;
+	if (strcmp(m->command,"verack" ) == 0) return VERACK;
 	return OTHER;
+}
+
+const char* bitcoin_type_str(const struct msg *m)
+{
+	switch (m->type) {
+	case INV     : return "inv";
+	case TX      : return "tx";
+	case BLOCK   : return "block";
+	case ADDR    : return "addr";
+	case VERSION : return "version";
+	case VERACK  : return "verack";
+	default      : return "other";
+	}
 }
 
 /**
@@ -165,24 +181,19 @@ static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 		     (char *)a,(char *)b);
 	}
 
-	enum msg_type type_a = find_type(a);
-	enum msg_type type_b = find_type(b);
-
 	// Sort by type if possible
-	if (type_a != type_b) return type_b-type_a;
+	if (msg_a->type != msg_b->type) return msg_b->type-msg_a->type;
 
 	// TODO Compare transaction priority using Satoshi's
 	// algoritm. Meanwhile transactions are considered to have
 	// equal priority
-	if (type_a == TX) return 0; // tie
+	if (msg_a->type == TX) return 0; // tie
 
 	// Blocks are sorted by creation date. Earlier one has a priority
-	if (type_a == BLOCK) {
-		const struct block *block_a = (struct block *)(msg_a->payload);
-		const struct block *block_b = (struct block *)(msg_b->payload);
+	if (msg_a->type == BLOCK) {
 		return 
-			GUINT32_FROM_LE(block_a->timestamp_le) - 
-			GUINT32_FROM_LE(block_b->timestamp_le);
+			GUINT32_FROM_LE(msg_a->block.timestamp_le) - 
+			GUINT32_FROM_LE(msg_b->block.timestamp_le);
 	}
 
 	// If both are OTHER, consider it a tie

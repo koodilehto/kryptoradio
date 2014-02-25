@@ -9,17 +9,21 @@
 #include <stdbool.h>
 
 enum msg_type {
+	UNDEFINED,
 	OTHER,
 	INV,
 	TX,
-	BLOCK
+	BLOCK,
+	ADDR,
+	VERSION,
+	VERACK,
 };
 
 /**
- * Data type for message structure.
+ * Data type for message structure on wire.
  * https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
  */
-struct __attribute__ ((__packed__)) msg {
+struct __attribute__ ((__packed__)) msg_wire {
 	guint32 magic;
 	char command[12];
 	guint32 length_le; // Little-endian!
@@ -41,11 +45,25 @@ struct __attribute__ ((__packed__)) block {
 	guint8 txs[]; // Transaction count and list of transactions
 };
 
+struct __attribute__ ((__packed__)) msg {
+	guint length;
+	guint height;
+	enum msg_type type;
+	union {
+		struct block block;
+		guint8 payload[1];
+	};
+};
+
 // TODO function comments
 
 guint64 var_int(const guint8 *const buf);
 gint var_int_len(const guint8 *const buf);
-guint32 checksum(const struct msg *const m);
+
+/**
+ * Calculates checksum for given wire message.
+ */
+guint32 checksum(const struct msg_wire *const m);
 
 /**
  * Calculates double SHA256 of given data. This is described in
@@ -89,8 +107,14 @@ GHashTable *bitcoin_new_inventory();
 bool bitcoin_inv_insert(GHashTable *inv, struct msg *const m);
 
 /**
- * Returns message type of given raw message
+ * Returns message type of given wire message.
  */
-enum msg_type bitcoin_find_type(const struct msg *m);
+enum msg_type bitcoin_find_type(const struct msg_wire *m);
+
+/**
+ * Convert msg_type inside msg to string constant. Returns static
+ * buffer.
+ */
+const char* bitcoin_type_str(const struct msg *m);
 
 #endif /* BITCOIN_H_ */
