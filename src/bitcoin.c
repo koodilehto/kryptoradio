@@ -101,9 +101,11 @@ bool bitcoin_join(int fd)
 
 struct bitcoin_storage bitcoin_new_storage()
 {
+	// st.inv owns the key. Items in inventory must NOT be removed
+	// before they are dequeued from send queue!
 	struct bitcoin_storage st;
 	st.inv = g_hash_table_new_full(&dhash_hash,dhash_eq,free,free);
-	st.send_queue = NULL;
+	st.send_queue = g_sequence_new(NULL);
 	return st;
 }
 
@@ -122,6 +124,10 @@ bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 
 	// Store message
 	g_hash_table_insert(st->inv,key,m);
+
+	// Put hash key to the send queue
+	g_sequence_insert_sorted(st->send_queue,key,comparator,st->inv);
+
 	return true;
 }
 
