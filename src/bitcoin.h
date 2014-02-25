@@ -45,13 +45,18 @@ struct __attribute__ ((__packed__)) block {
 	guint8 txs[]; // Transaction count and list of transactions
 };
 
-struct __attribute__ ((__packed__)) msg {
-	guint length;
-	guint height;
+/**
+ * Data type for messages on memory. This format is never used on
+ * wire. This is not packed because internal structure is not
+ * revealed to the network.
+ */
+struct msg {
+	guint32 length;
+	guint32 height;
 	enum msg_type type;
 	union {
 		struct block block;
-		guint8 payload[1];
+		guint8 payload[1]; // Workaround for accessing raw data
 	};
 };
 
