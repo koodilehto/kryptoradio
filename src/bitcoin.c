@@ -99,12 +99,15 @@ bool bitcoin_join(int fd)
 		sizeof(join_message);
 }
 
-GHashTable *bitcoin_new_inventory()
+struct bitcoin_storage bitcoin_new_storage()
 {
-	return g_hash_table_new_full(&dhash_hash,dhash_eq,free,free);
+	struct bitcoin_storage st;
+	st.inv = g_hash_table_new_full(&dhash_hash,dhash_eq,free,free);
+	st.send_queue = NULL;
+	return st;
 }
 
-bool bitcoin_inv_insert(GHashTable *inv, struct msg *const m)
+bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 {
 	// Allocate buffer for key and calculate hash of a message
 	guchar* key = malloc(SHA256_DIGEST_LENGTH);
@@ -112,13 +115,13 @@ bool bitcoin_inv_insert(GHashTable *inv, struct msg *const m)
 	bitcoin_inv_hash_buf(m, key);
 
 	// If key is already stored, do not replace old one
-	if (g_hash_table_contains(inv,key)) {
+	if (g_hash_table_contains(st->inv,key)) {
 		free(key);
 		return false;
 	}
 
 	// Store message
-	g_hash_table_insert(inv,key,m);
+	g_hash_table_insert(st->inv,key,m);
 	return true;
 }
 

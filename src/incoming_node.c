@@ -16,7 +16,7 @@
 
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
-void incoming_node_data(const int fd, GHashTable *const inv)
+void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 {
 	static struct msg_wire *buf = NULL; // For storing the message payload
 	static int buf_allocated = 0;
@@ -104,7 +104,7 @@ void incoming_node_data(const int fd, GHashTable *const inv)
 			if (buf == NULL) errx(5,"Memory compaction failed");
 		}
 
-		if (bitcoin_inv_insert(inv,COMPACT)) {
+		if (bitcoin_inv_insert(st,COMPACT)) {
 			// Do not reuse buffer memory because
 			// it is stored to the inventory
 			buf = NULL;

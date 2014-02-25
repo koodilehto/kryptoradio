@@ -60,6 +60,16 @@ struct msg {
 	};
 };
 
+/**
+ * Stores pointers to various data structures holding bitcoin
+ * inventory items (blocks and transactions) and priority queue for
+ * sending messages.
+ */
+struct bitcoin_storage {
+	GHashTable *inv;
+	GSequence *send_queue;
+};
+
 // TODO function comments
 
 guint64 var_int(const guint8 *const buf);
@@ -98,18 +108,19 @@ char *hex256(const guchar *const buf);
 bool bitcoin_join(int fd);
 
 /**
- * Returns a new Bitcoin message inventory which uses bitcoin specific
- * hash calculation and equality test. Only data of type `struct msg`
- * should be stored here.
+ * Returns a new Bitcoin storage which is documented in `struct
+ * bitcoin_storage`. Individual elements in should be free'd
+ * separately if needed. TODO: Destructor is not yet implemented
+ * because this data is never deallocated in current code.
  */
-GHashTable *bitcoin_new_inventory();
+struct bitcoin_storage bitcoin_new_storage();
 
 /**
  * Insert given message to inventory of objects. This function doesn't
  * modify m, but it is not declared as const because glib doesn't have
  * constant pointers to data.
  */
-bool bitcoin_inv_insert(GHashTable *inv, struct msg *const m);
+bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m);
 
 /**
  * Returns message type of given wire message.

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Prepare local data for incoming_node_data
-	GHashTable *const inv = bitcoin_new_inventory();
+	struct bitcoin_storage st = bitcoin_new_storage();
 
 	printf("Connected.\n");
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
 		// Always serve slow serial first
 		if (fds[0].revents & POLLOUT) serial(dev_fd);
-		if (fds[1].revents & POLLIN) incoming_node_data(node_fd,inv);
+		if (fds[1].revents & POLLIN) incoming_node_data(node_fd,&st);
 	}
 }
 
