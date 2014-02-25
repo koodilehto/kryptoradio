@@ -178,7 +178,7 @@ const char* bitcoin_type_str(const struct msg *m)
 
 /**
  * Comparator of given inventory hashes. Hash table should be passed
- * as the user_data.
+ * as the user_data. Higher priority message has lower return value.
  */
 static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 {
@@ -191,7 +191,7 @@ static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 	}
 
 	// Sort by type if possible
-	if (msg_a->type != msg_b->type) return msg_b->type-msg_a->type;
+	if (msg_a->type != msg_b->type) return msg_a->type-msg_b->type;
 
 	// TODO Compare transaction priority using Satoshi's
 	// algoritm. Meanwhile transactions are considered to have

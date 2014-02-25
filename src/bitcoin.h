@@ -8,15 +8,22 @@
 #include <glib.h>
 #include <stdbool.h>
 
+/**
+ * Message types. Order also defines priority in transmission. The
+ * priority is descending, meaning that BLOCK has priority over TX.
+ * UNDEFINED doesn't match anything in Bitcoin Specification and
+ * should never be stored (used internally in incoming_node_data()
+ * when type is not known yet).
+ */
 enum msg_type {
 	UNDEFINED,
-	OTHER,
-	INV,
-	TX,
 	BLOCK,
+	TX,
 	ADDR,
 	VERSION,
 	VERACK,
+	INV,
+	OTHER,
 };
 
 /**
