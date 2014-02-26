@@ -13,6 +13,8 @@
 #include "incoming_node.h"
 #include "bitcoin.h"
 
+#define SERIAL_ESC 0xC0
+
 // Prototypes
 void serial(const int devfd, struct bitcoin_storage *const st);
 
@@ -92,9 +94,11 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 
 	if (m == NULL) {
 		// Send empty stuff and go back to waiting loop
-		const char buf[] = "empty ";
-		const int ret = write(devfd,buf,sizeof(buf)-1);
+		const char buf[1024];
+		memset(&buf,SERIAL_ESC,sizeof(buf));
+		const int ret = write(devfd,buf,sizeof(buf));
 		if (ret < 1) err(4,"Unable to write to serial port");
+		printf("Sending %d bytes of padding\n",ret);
 		return;
 	}
 
