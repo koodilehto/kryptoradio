@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	
 	// TODO baud rate
 
-	int dev_fd = open(argv[2],O_WRONLY|O_NOCTTY);
+	int dev_fd = open(argv[2],O_WRONLY|O_NOCTTY|O_NONBLOCK);
 	if (dev_fd == -1) {
 		err(2,"Unable to open serial port %s",argv[2]);
 	}
@@ -80,24 +80,42 @@ int main(int argc, char *argv[])
 
 void serial(const int devfd, struct bitcoin_storage *const st)
 {
+	static const struct msg *m = NULL;
+	static int pos = -1;
+
 	gint size = g_sequence_get_length(st->send_queue);
 
-	if (size==0) {
+	if (m == NULL && size > 0) {
+		m = bitcoin_dequeue(st);
+		pos = -1;
+	}
+
+	if (m == NULL) {
+		// Send empty stuff and go back to waiting loop
 		const char buf[] = "empty ";
 		const int ret = write(devfd,buf,sizeof(buf)-1);
 		if (ret < 1) err(4,"Unable to write to serial port");
-	} else {
-		const struct msg *m = bitcoin_dequeue(st);
+		return;
+	}
 
-		printf("Sending %s %s, queue size is %d\n",
-		       bitcoin_type_str(m),
-		       hex256(bitcoin_inv_hash(m)),
-		       size);
+	printf("Sending %s %s, pos %d/%d, queue size %d\n",
+	       bitcoin_type_str(m),
+	       hex256(bitcoin_inv_hash(m)),
+	       pos,
+	       m->length,
+	       size);
 
-		// FIXME no two writes inside single call!
-		const int ret1 = write(devfd,&m->type,1); // FIXME byte ordering issue
-		if (ret1 < 1) err(4,"Unable to write to serial port");
-		const int ret2 = write(devfd,m->payload,m->length);
-		if (ret2 < 1) err(4,"Unable to write to serial port");
+	if (pos == -1) {
+		const int ret = write(devfd,&m->type,1); // FIXME byte ordering issue
+		if (ret < 1) err(4,"Unable to write to serial port");
+		pos++;
+		return;
+	}
+
+	int ret = write(devfd,m->payload+pos,m->length-pos);
+	if (ret < 1) err(4,"Unable to write to serial port");
+	pos += ret;
+	if (pos == m->length) {
+		m = NULL;
 	}
 }
