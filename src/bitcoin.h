@@ -130,6 +130,11 @@ struct bitcoin_storage bitcoin_new_storage();
 bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m);
 
 /**
+ * Fetches unsent message with highest sending priority.
+ */
+const struct msg *bitcoin_dequeue(struct bitcoin_storage const *st);
+
+/**
  * Returns message type of given wire message.
  */
 enum msg_type bitcoin_find_type(const struct msg_wire *m);

@@ -14,7 +14,7 @@
 #include "bitcoin.h"
 
 // Prototypes
-void serial(const int fd);
+void serial(const int devfd, struct bitcoin_storage *const st);
 
 int main(int argc, char *argv[])
 {
@@ -73,21 +73,31 @@ int main(int argc, char *argv[])
 		if (ret < 1) err(5,"Error while polling");
 
 		// Always serve slow serial first
-		if (fds[0].revents & POLLOUT) serial(dev_fd);
+		if (fds[0].revents & POLLOUT) serial(dev_fd,&st);
 		if (fds[1].revents & POLLIN) incoming_node_data(node_fd,&st);
 	}
 }
 
-void serial(const int devfd) {
-	// Just dummy writer for generating much traffic to serial
-	static guint8 i=0;
-	char instanssi[43];
-	snprintf(instanssi,sizeof(instanssi),
-		 "Kissa kissa kissa kissa... Instanssi! %3hhu\n",
-		 i++);
+void serial(const int devfd, struct bitcoin_storage *const st)
+{
+	gint size = g_sequence_get_length(st->send_queue);
 
-	// Write the output. Do not care if some output is ignored.
-	const int ret = write(devfd,instanssi,sizeof(instanssi)-1);
-	if (ret < 1) err(4,"Unable to write to serial port");
-	printf("sent %d bytes to serial port\n",ret);
+	if (size==0) {
+		const char buf[] = "empty ";
+		const int ret = write(devfd,buf,sizeof(buf)-1);
+		if (ret < 1) err(4,"Unable to write to serial port");
+	} else {
+		const struct msg *m = bitcoin_dequeue(st);
+
+		printf("Sending %s %s, queue size is %d\n",
+		       bitcoin_type_str(m),
+		       hex256(bitcoin_inv_hash(m)),
+		       size);
+
+		// FIXME no two writes inside single call!
+		const int ret1 = write(devfd,&m->type,1); // FIXME byte ordering issue
+		if (ret1 < 1) err(4,"Unable to write to serial port");
+		const int ret2 = write(devfd,m->payload,m->length);
+		if (ret2 < 1) err(4,"Unable to write to serial port");
+	}
 }

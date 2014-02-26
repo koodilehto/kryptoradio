@@ -131,6 +131,17 @@ bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 	return true;
 }
 
+const struct msg *bitcoin_dequeue(struct bitcoin_storage const *st)
+{
+	// Fetch and dequeue key
+	GSequenceIter *it = g_sequence_get_begin_iter(st->send_queue);
+	guchar *key = g_sequence_get(it);
+	g_sequence_remove(it);
+	
+	// Fetch value (or NULL in case of failure)
+	return g_hash_table_lookup(st->inv,key);
+}
+
 /**
  * Calculates a hash for use internally in Hash Table storage. This
  * hash should not be used outside g_hash_table.
