@@ -8,10 +8,12 @@
 #include <glib.h>
 #include <poll.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "incoming_node.h"
 #include "bitcoin.h"
+#include "serial.h"
 
 #define SERIAL_ESC 0xC0
 #define SERIAL_LITERAL 0x00
@@ -32,17 +34,24 @@ void encode_init(struct encoder_state *s, guint8 *buf, bool escaped);
 void encode(struct encoder_state *s, void *p, int n);
 int encode_end(struct encoder_state *s);
 
+/**
+ * Converts to integer with nicer error handling than atoi() but nicer
+ * interface than strtol() */
+bool to_int(const char *const p, int *const i);
+
 int main(int argc, char *argv[])
 {
-	if(argc != 3) {
-		errx(1,"Usage: %s <ip of server> <serial_port>",argv[0]);
+	if(argc != 4) {
+		errx(1,"Usage: %s <ip of server> <serial_port> <serial_speed>",argv[0]);
 	} 
 
 	// Prepare serial port
-	
-	// TODO baud rate
-
-	int dev_fd = open(argv[2],O_WRONLY|O_NOCTTY|O_NONBLOCK);
+	int speed;
+	if (!to_int(argv[3],&speed)) {
+		errx(1,"Invalid serial speed %s: Not a number",argv[3]);
+	}
+	int dev_fd = serial_open_raw(argv[2], O_NOCTTY|O_WRONLY|O_NONBLOCK,
+				     speed);
 	if (dev_fd == -1) {
 		err(2,"Unable to open serial port %s",argv[2]);
 	}
@@ -232,4 +241,11 @@ void encode(struct encoder_state *s, void *src, int n)
 int encode_end(struct encoder_state *s)
 {
 	return s->p-s->start;
+}
+
+bool to_int(const char *const p, int *const i) {
+	char *endptr;
+	if (*p == '\0') return false;
+	*i = strtol(p, &endptr, 10);
+	return *endptr == '\0';
 }
