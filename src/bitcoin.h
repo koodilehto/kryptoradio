@@ -60,7 +60,10 @@ struct __attribute__ ((__packed__)) block {
 struct msg {
 	guint32 length;
 	guint32 height;
-	enum msg_type type;
+	bool sent; // Is this sent over the serial link. Maybe this should be a timestamp?
+	enum msg_type type; // FIXME this should be guint8 to make it
+			    // more compact. This field is included
+			    // when calculating signature
 	union {
 		struct block block;
 		guint8 payload[1]; // Workaround for accessing raw data
@@ -132,7 +135,7 @@ bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m);
 /**
  * Fetches unsent message with highest sending priority.
  */
-const struct msg *bitcoin_dequeue(struct bitcoin_storage const *st);
+struct msg *bitcoin_dequeue(struct bitcoin_storage const *st);
 
 /**
  * Returns message type of given wire message.

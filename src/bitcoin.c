@@ -131,7 +131,7 @@ bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 	return true;
 }
 
-const struct msg *bitcoin_dequeue(struct bitcoin_storage const *st)
+struct msg *bitcoin_dequeue(struct bitcoin_storage const *st)
 {
 	// Fetch and dequeue key
 	GSequenceIter *it = g_sequence_get_begin_iter(st->send_queue);

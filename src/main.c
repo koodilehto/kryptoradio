@@ -14,9 +14,23 @@
 #include "bitcoin.h"
 
 #define SERIAL_ESC 0xC0
+#define SERIAL_LITERAL 0x00
+#define SERIAL_START 0x01
+
+struct encoder_state {
+	guint8 *p;
+	guint8 *start;
+};
 
 // Prototypes
 void serial(const int devfd, struct bitcoin_storage *const st);
+int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
+                         unsigned char *sig, int *siglen,
+                         const unsigned char *seckey,
+                         const unsigned char *nonce);
+void encode_init(struct encoder_state *s, guint8 *buf);
+void encode(struct encoder_state *s, void *p, int n);
+int encode_end(struct encoder_state *s);
 
 int main(int argc, char *argv[])
 {
@@ -82,44 +96,129 @@ int main(int argc, char *argv[])
 
 void serial(const int devfd, struct bitcoin_storage *const st)
 {
-	static const struct msg *m = NULL;
-	static int pos = -1;
+	static guint8 *buf_start = NULL; // Start of send buffer
+	static guint8 *buf_p = NULL; // Pointer to next unsent byte
+	static int buf_allocated = 0; // Bytes allocated for buffer
+	static int buf_left = 0; // Bytes left to send
 
-	gint size = g_sequence_get_length(st->send_queue);
+	gint queued = g_sequence_get_length(st->send_queue);
 
-	if (m == NULL && size > 0) {
-		m = bitcoin_dequeue(st);
-		pos = -1;
+	if (!buf_left && queued) {
+		// Try to fill send buffer
+		struct msg *m = bitcoin_dequeue(st);
+
+		// Should not happen
+		if (m == NULL) errx(6,"Send queue handling error");
+
+		// Do not retransmit if it is already sent.
+		if (m->sent) return;
+
+		// Mark message as sent
+		m->sent = true;
+
+		/* Pessimistic estimate: Message starts with a header
+		 * (2 bytes) and payload has the following: signature
+		 * length (1) + maximum signature length (72) + type
+		 * (1) + content. Every character triggers escape,
+		 * thus doubling the space needed. */
+		const int max_buffer_len = 2+2*(1+72+1+m->length);
+		// Reallocate buffer
+		if (buf_allocated < max_buffer_len) {
+			buf_start = g_renew(guint8,buf_start,max_buffer_len);
+			buf_allocated = max_buffer_len;
+		}
+
+		// Calculate signature. FIXME: Include type in calculation!
+		
+		// Bitcoin message header in unidirectional
+		// transfer. The signature is used to verify the
+		// transmitter. Transactions have their own signature
+		// inside message body, too.
+		
+		unsigned char sig[72];
+		int siglen;
+		secp256k1_ecdsa_sign(m->payload,m->length,sig,&siglen,NULL,NULL);
+
+		struct encoder_state s;
+		encode_init(&s,buf_start);
+		encode(&s,&siglen,1); // FIXME doesn't work on big endian archs
+		encode(&s,&sig,siglen);
+		encode(&s,&m->type,1); // FIXME doesn't work on big endian archs
+		encode(&s,m->payload,m->length);
+
+		// Finishing encoding and updating buffer
+		buf_left = encode_end(&s);
+		buf_p = buf_start;
+
+		// Debugging information
+		printf("Sending %s %s, pos %d, queue size %d\n",
+		       bitcoin_type_str(m),
+		       hex256(bitcoin_inv_hash(m)),
+		       m->length,
+		       queued);
 	}
 
-	if (m == NULL) {
+	if (buf_left) {
+		// Consume buffer as much as possible
+		const int wrote = write(devfd,buf_p,buf_left);
+		if (wrote == 0) {
+			errx(3,"Weird behaviour on serial port");
+		} else if (wrote == -1) {
+			err(4,"Unable to write to serial port");
+		}
+		buf_p += wrote;
+		buf_left -= wrote;	
+	} else {
 		// Send empty stuff and go back to waiting loop
 		const char buf[1024];
 		memset(&buf,SERIAL_ESC,sizeof(buf));
 		const int ret = write(devfd,buf,sizeof(buf));
 		if (ret < 1) err(4,"Unable to write to serial port");
 		printf("Sending %d bytes of padding\n",ret);
-		return;
-	}
+	} 
+}
 
-	printf("Sending %s %s, pos %d/%d, queue size %d\n",
-	       bitcoin_type_str(m),
-	       hex256(bitcoin_inv_hash(m)),
-	       pos,
-	       m->length,
-	       size);
+/**
+ * Dummy placeholder function. Original one creates an ECDSA signature.
+ *
+ * Returns: 1: signature created
+ *          0: nonce invalid, try another one
+ * In:      msg: the message being signed
+ *          msglen: the length of the message being signed
+ *          seckey: pointer to a 32-byte secret key (assumed to be valid)
+ *          nonce: pointer to a 32-byte nonce (generated with a cryptographic PRNG)
+ * Out:     sig: pointer to a 72-byte array where the signature will be placed.
+ *          siglen: pointer to an int, which will be updated to the signature length (<=72).
+ */
+int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
+                         unsigned char *sig, int *siglen,
+                         const unsigned char *seckey,
+                         const unsigned char *nonce)
+{
+	const char dummy[] = "kissa ja kaksitoista muuta kissaa";
+	strcpy((char*)sig,dummy);
+	*siglen = sizeof(dummy);
+	return 1;
+}
 
-	if (pos == -1) {
-		const int ret = write(devfd,&m->type,1); // FIXME byte ordering issue
-		if (ret < 1) err(4,"Unable to write to serial port");
-		pos++;
-		return;
-	}
+void encode_init(struct encoder_state *s, guint8 *buf)
+{
+	s->start = buf;
+	s->p = buf;
+	*s->p++ = SERIAL_ESC; // TODO Do not send if sent in "zero-fill"
+	*s->p++ = SERIAL_START;
+}
 
-	int ret = write(devfd,m->payload+pos,m->length-pos);
-	if (ret < 1) err(4,"Unable to write to serial port");
-	pos += ret;
-	if (pos == m->length) {
-		m = NULL;
+void encode(struct encoder_state *s, void *src, int n)
+{
+	for (int i=0; i<n; i++) {
+		guint8 byte = ((guint8*)src)[i];
+		*s->p++ = byte;
+		if (byte == SERIAL_ESC) *s->p++ = SERIAL_LITERAL;
 	}
+}
+
+int encode_end(struct encoder_state *s)
+{
+	return s->p-s->start;
 }
