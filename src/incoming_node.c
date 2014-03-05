@@ -58,6 +58,7 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 			COMPACT->type = buf_type;
 			COMPACT->length = payload_len;
 			COMPACT->height = 0;
+			COMPACT->sent = false;
 			// Rewind to compacted payload starting pos
 			buf_pos = offsetof(struct msg,payload);
 		}

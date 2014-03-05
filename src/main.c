@@ -113,7 +113,12 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		if (m == NULL) errx(6,"Send queue handling error");
 
 		// Do not retransmit if it is already sent.
-		if (m->sent) return;
+		if (m->sent) {
+			printf("Already sent %s %s, skipping\n",
+			       bitcoin_type_str(m),
+			       hex256(bitcoin_inv_hash(m)));
+			return;
+		}
 
 		// Mark message as sent
 		m->sent = true;
