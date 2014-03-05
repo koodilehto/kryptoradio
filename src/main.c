@@ -28,7 +28,7 @@ int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
                          unsigned char *sig, int *siglen,
                          const unsigned char *seckey,
                          const unsigned char *nonce);
-void encode_init(struct encoder_state *s, guint8 *buf);
+void encode_init(struct encoder_state *s, guint8 *buf, bool escaped);
 void encode(struct encoder_state *s, void *p, int n);
 int encode_end(struct encoder_state *s);
 
@@ -100,6 +100,8 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 	static guint8 *buf_p = NULL; // Pointer to next unsent byte
 	static int buf_allocated = 0; // Bytes allocated for buffer
 	static int buf_left = 0; // Bytes left to send
+	static bool escaped = false; // Minor optimization when using
+				     // continuous transmit mode
 
 	gint queued = g_sequence_get_length(st->send_queue);
 
@@ -140,7 +142,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		secp256k1_ecdsa_sign(m->payload,m->length,sig,&siglen,NULL,NULL);
 
 		struct encoder_state s;
-		encode_init(&s,buf_start);
+		encode_init(&s,buf_start,escaped);
 		encode(&s,&siglen,1); // FIXME doesn't work on big endian archs
 		encode(&s,&sig,siglen);
 		encode(&s,&m->type,1); // FIXME doesn't work on big endian archs
@@ -149,9 +151,10 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		// Finishing encoding and updating buffer
 		buf_left = encode_end(&s);
 		buf_p = buf_start;
+		escaped = false;
 
 		// Debugging information
-		printf("Sending %s %s, pos %d, queue size %d\n",
+		printf("Sending %s %s, bytes %d, queue size %d\n",
 		       bitcoin_type_str(m),
 		       hex256(bitcoin_inv_hash(m)),
 		       m->length,
@@ -167,7 +170,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 			err(4,"Unable to write to serial port");
 		}
 		buf_p += wrote;
-		buf_left -= wrote;	
+		buf_left -= wrote;
 	} else {
 		// Send empty stuff and go back to waiting loop
 		const char buf[1024];
@@ -175,6 +178,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		const int ret = write(devfd,buf,sizeof(buf));
 		if (ret < 1) err(4,"Unable to write to serial port");
 		printf("Sending %d bytes of padding\n",ret);
+		escaped = true;
 	} 
 }
 
@@ -201,11 +205,13 @@ int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
 	return 1;
 }
 
-void encode_init(struct encoder_state *s, guint8 *buf)
+void encode_init(struct encoder_state *s, guint8 *buf, bool escaped)
 {
 	s->start = buf;
 	s->p = buf;
-	*s->p++ = SERIAL_ESC; // TODO Do not send if sent in "zero-fill"
+	if (!escaped) {
+		*s->p++ = SERIAL_ESC;
+	}
 	*s->p++ = SERIAL_START;
 }
 
