@@ -82,8 +82,21 @@ struct bitcoin_storage {
 
 // TODO function comments
 
+/**
+ * Returns contents of var_int located at buf.
+ */
 guint64 var_int(const guint8 *const buf);
+
+/**
+ * Returns number of bytes occupied by var_int located at buf. The
+ * result may be 1, 3, 5, or 9.
+ */
 gint var_int_len(const guint8 *const buf);
+
+/**
+ * Returns contents of var_int located at **p and advances pointer at
+ * *p to location right after var_int field. */
+guint64 get_var_int(const guint8 **p);
 
 /**
  * Calculates checksum for given wire message.
@@ -147,5 +160,10 @@ enum msg_type bitcoin_find_type(const struct msg_wire *m);
  * buffer.
  */
 const char* bitcoin_type_str(const struct msg *m);
+
+/**
+ * Returns transaction length by peeking inside given buffer.
+ */
+int bitcoin_tx_len(const guint8 *const buf);
 
 #endif /* BITCOIN_H_ */

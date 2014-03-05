@@ -50,6 +50,12 @@ int var_int_len(const guint8 *const buf)
 	return 1;
 }
 
+guint64 get_var_int(const guint8 **p) {
+	guint64 n = var_int(*p);
+	*p += var_int_len(*p);
+	return n;
+}
+
 guint32 checksum(const struct msg_wire *const m)
 {
 	return *(guint32*)dhash(m->payload,GUINT32_FROM_LE(m->length_le),NULL);
@@ -218,4 +224,27 @@ static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 
 	// If both are OTHER, consider it a tie
 	return 0;
+}
+
+int bitcoin_tx_len(const guint8 *const buf)
+{
+	const guint8 *p = buf;
+
+	p += 4; // Skip version
+	const guint64 tx_in_count = get_var_int(&p);
+	for (guint64 tx_in=0; tx_in < tx_in_count; tx_in++) {
+		p += 36; // Skip previous_output
+		const guint64 script_length = get_var_int(&p);
+		p += script_length;
+		p += 4; // Skip sequence
+	}
+	const guint64 tx_out_count = get_var_int(&p);
+	for (guint64 tx_out=0; tx_out < tx_out_count; tx_out++) {
+		p += 8; // Skip transaction value
+		const guint64 script_length = get_var_int(&p);
+		p += script_length;
+	}
+	p += 4; // Skip lock time
+
+	return p-buf;
 }

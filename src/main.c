@@ -160,7 +160,25 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		encode(&s,&siglen,1); // FIXME doesn't work on big endian archs
 		encode(&s,&sig,siglen);
 		encode(&s,&m->type,1); // FIXME doesn't work on big endian archs
-		encode(&s,m->payload,m->length);
+		if (m->type == BLOCK) {
+			encode(&s,&m->block,sizeof(struct block));
+			const guint8 *p = m->block.txs;
+			const guint64 txs = get_var_int(&p);
+			for (guint64 tx=0; tx<txs; tx++) {
+				int length = bitcoin_tx_len(p);
+				// Debugging information
+				printf("Block tx %ld/%ld: %s, %d bytes\n",
+				       tx,txs,
+				       hex256(dhash(p,length,NULL)),
+				       length);
+				p += length;
+			}
+			if (p != m->payload + m->length) {
+				errx(9,"Block length doesn't match to contents");
+			}
+		} else {
+			encode(&s,m->payload,m->length);
+		}
 
 		// Finishing encoding and updating buffer
 		buf_left = encode_end(&s);
