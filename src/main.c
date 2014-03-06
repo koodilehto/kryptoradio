@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <openssl/sha.h>
 #include "incoming_node.h"
 #include "bitcoin.h"
 #include "serial.h"
@@ -31,8 +32,8 @@ int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
                          const unsigned char *seckey,
                          const unsigned char *nonce);
 void encode_init(struct encoder_state *s, guint8 *buf, bool escaped);
-void encode(struct encoder_state *s, void *p, int n);
-int encode_end(struct encoder_state *s);
+void encode(struct encoder_state *s, const void *src, const int n);
+int encode_end(const struct encoder_state *const s);
 
 /**
  * Converts to integer with nicer error handling than atoi() but nicer
@@ -166,11 +167,37 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 			const guint64 txs = get_var_int(&p);
 			for (guint64 tx=0; tx<txs; tx++) {
 				int length = bitcoin_tx_len(p);
-				// Debugging information
-				printf("Block tx %ld/%ld: %s, %d bytes\n",
-				       tx,txs,
-				       hex256(dhash(p,length,NULL)),
-				       length);
+				const guchar *hash = dhash(p,length,NULL);
+
+				// Look for the hash from inventory
+				const struct msg *block_tx = g_hash_table_lookup(st->inv,hash);
+				// TODO we should add tx to inventory
+				// to allow supporting better queue
+				// position algorithm
+
+				if (block_tx == NULL || !block_tx->sent) {
+					// Fresh meat, sending everything
+					const guint8 is_full = 1;
+					encode(&s,&is_full,sizeof(is_full));
+					encode(&s,p,length);
+
+					// Debugging
+					printf("Block tx %s in unseen. "
+					       "Net bytes: +1\n",
+					       hex256(hash));
+
+				} else {
+					// Already seen. Transmit only the hash
+					const guint8 is_full = 0;
+					encode(&s,&is_full,sizeof(is_full));
+					encode(&s,hash,SHA256_DIGEST_LENGTH);
+
+					// Debugging
+					printf("Block tx %s already seen. "
+					       "Net bytes: %d\n",
+					       hex256(hash),
+					       SHA256_DIGEST_LENGTH-length+1);
+				}
 				p += length;
 			}
 			if (p != m->payload + m->length) {
@@ -247,16 +274,16 @@ void encode_init(struct encoder_state *s, guint8 *buf, bool escaped)
 	*s->p++ = SERIAL_START;
 }
 
-void encode(struct encoder_state *s, void *src, int n)
+void encode(struct encoder_state *s, const void *const src, const int n)
 {
 	for (int i=0; i<n; i++) {
-		guint8 byte = ((guint8*)src)[i];
+		guint8 byte = ((const guint8*)src)[i];
 		*s->p++ = byte;
 		if (byte == SERIAL_ESC) *s->p++ = SERIAL_LITERAL;
 	}
 }
 
-int encode_end(struct encoder_state *s)
+int encode_end(const struct encoder_state *const s)
 {
 	return s->p-s->start;
 }
