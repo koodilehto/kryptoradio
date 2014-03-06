@@ -169,35 +169,42 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 				int length = bitcoin_tx_len(p);
 				const guchar *hash = dhash(p,length,NULL);
 
+				// Some debugging tools
+				bool dequeued = false;
+				int net_bytes;
+
 				// Look for the hash from inventory
-				const struct msg *block_tx = g_hash_table_lookup(st->inv,hash);
+				struct msg *block_tx = g_hash_table_lookup(st->inv,hash);
+
 				// TODO we should add tx to inventory
 				// to allow supporting better queue
 				// position algorithm
 
 				if (block_tx == NULL || !block_tx->sent) {
+					// Mark it sent if it is also in the queue.
+					if (block_tx != NULL) {
+						block_tx->sent = true;
+						dequeued = true;
+					}
+
 					// Fresh meat, sending everything
 					const guint8 is_full = 1;
 					encode(&s,&is_full,sizeof(is_full));
 					encode(&s,p,length);
 
-					// Debugging
-					printf("Block tx %s in unseen. "
-					       "Net bytes: +1\n",
-					       hex256(hash));
-
+					net_bytes = 1;
 				} else {
 					// Already seen. Transmit only the hash
 					const guint8 is_full = 0;
 					encode(&s,&is_full,sizeof(is_full));
 					encode(&s,hash,SHA256_DIGEST_LENGTH);
 
-					// Debugging
-					printf("Block tx %s already seen. "
-					       "Net bytes: %d\n",
-					       hex256(hash),
-					       SHA256_DIGEST_LENGTH-length+1);
+					net_bytes = SHA256_DIGEST_LENGTH-length+1;
 				}
+				// Debugging
+				printf("Block tx %s, net bytes %d, dequeued %d\n",
+				       hex256(hash), net_bytes, dequeued);
+
 				p += length;
 			}
 			if (p != m->payload + m->length) {
