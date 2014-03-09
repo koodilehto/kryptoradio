@@ -57,7 +57,7 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 		if (buf_type != INV) {
 			COMPACT->type = buf_type;
 			COMPACT->length = payload_len;
-			COMPACT->height = 0;
+			COMPACT->height = ~0; // meaning: not important
 			COMPACT->sent = false;
 			// Rewind to compacted payload starting pos
 			buf_pos = offsetof(struct msg,payload);
@@ -103,6 +103,16 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 		if (buf_allocated != buf_pos) {
 			buf = realloc(buf,buf_pos);
 			if (buf == NULL) errx(5,"Memory compaction failed");
+		}
+
+		// Upadate height
+		if (buf_type == BLOCK) {
+			const struct msg *parent = g_hash_table_lookup(st->inv,COMPACT->block.prev_block);
+			if (parent == NULL) {
+				COMPACT->height = 0; // Start orphaned block from 0
+			} else {
+				COMPACT->height = parent->height+1;
+			}
 		}
 
 		if (bitcoin_inv_insert(st,COMPACT)) {

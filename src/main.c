@@ -220,10 +220,11 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		escaped = false;
 
 		// Debugging information
-		printf("Sending %s %s, bytes %d, queue size %d\n",
+		printf("Sending %s %s, bytes %d, height %d, queue size %d\n",
 		       bitcoin_type_str(m),
 		       hex256(bitcoin_inv_hash(m)),
 		       m->length,
+		       m->height,
 		       queued);
 	}
 
