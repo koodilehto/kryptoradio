@@ -131,9 +131,14 @@ bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 	g_hash_table_insert(st->inv,key,m);
 
 	// Put hash key to the send queue
-	g_sequence_insert_sorted(st->send_queue,key,comparator,st->inv);
+	bitcoin_enqueue(st,key);
 
 	return true;
+}
+
+void bitcoin_enqueue(struct bitcoin_storage const *st, guchar *key)
+{
+	g_sequence_insert_sorted(st->send_queue,key,comparator,st->inv);
 }
 
 struct msg *bitcoin_dequeue(struct bitcoin_storage const *st)
@@ -206,22 +211,23 @@ static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 		     (char *)a,(char *)b);
 	}
 
-	// Sort by type if possible
-	if (msg_a->type != msg_b->type) return msg_a->type-msg_b->type;
+	// Already sent items are pushed towards the small end to aid
+	// them getting out of the queue
+	if (msg_a->sent) return -1;
+	if (msg_b->sent) return 1;
 
-	// TODO Compare transaction priority using Satoshi's
-	// algoritm. Meanwhile transactions are considered to have
-	// equal priority
-	if (msg_a->type == TX) return 0; // tie
+	// Send lowest height first
+	if (msg_a->height != msg_b->height) return msg_a->height - msg_b->height; 
 
-	// Blocks are sorted by creation date. Earlier one has a priority
-	if (msg_a->type == BLOCK) {
-		return 
-			GUINT32_FROM_LE(msg_a->block.timestamp_le) - 
-			GUINT32_FROM_LE(msg_b->block.timestamp_le);
-	}
+	// Send transactions first, then block. The priority is defined
+	// by the enum in bitcoin.h
+	if (msg_a->type != msg_b->type) return msg_a->type - msg_b->type;
 
-	// If both are OTHER, consider it a tie
+	// Now we may have two unconfirmed transactions, two blocks of
+	// same height (fork) or two transactions belonging to the
+	// same block. More elegant sorting (Satoshi's algorithm) may
+	// be done especially for the unconfirmed transactions, but
+	// currently we are considering it as a tie.
 	return 0;
 }
 

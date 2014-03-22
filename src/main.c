@@ -161,58 +161,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		encode(&s,&siglen,1); // FIXME doesn't work on big endian archs
 		encode(&s,&sig,siglen);
 		encode(&s,&m->type,1); // FIXME doesn't work on big endian archs
-		if (m->type == BLOCK) {
-			encode(&s,&m->block,sizeof(struct block));
-			const guint8 *p = m->block.txs;
-			const guint64 txs = get_var_int(&p);
-			for (guint64 tx=0; tx<txs; tx++) {
-				int length = bitcoin_tx_len(p);
-				const guchar *hash = dhash(p,length,NULL);
-
-				// Some debugging tools
-				bool dequeued = false;
-				int net_bytes;
-
-				// Look for the hash from inventory
-				struct msg *block_tx = g_hash_table_lookup(st->inv,hash);
-
-				// TODO we should add tx to inventory
-				// to allow supporting better queue
-				// position algorithm
-
-				if (block_tx == NULL || !block_tx->sent) {
-					// Mark it sent if it is also in the queue.
-					if (block_tx != NULL) {
-						block_tx->sent = true;
-						dequeued = true;
-					}
-
-					// Fresh meat, sending everything
-					const guint8 is_full = 1;
-					encode(&s,&is_full,sizeof(is_full));
-					encode(&s,p,length);
-
-					net_bytes = 1;
-				} else {
-					// Already seen. Transmit only the hash
-					const guint8 is_full = 0;
-					encode(&s,&is_full,sizeof(is_full));
-					encode(&s,hash,SHA256_DIGEST_LENGTH);
-
-					net_bytes = SHA256_DIGEST_LENGTH-length+1;
-				}
-				// Debugging
-				printf("Block tx %s, net bytes %d, dequeued %d\n",
-				       hex256(hash), net_bytes, dequeued);
-
-				p += length;
-			}
-			if (p != m->payload + m->length) {
-				errx(9,"Block length doesn't match to contents");
-			}
-		} else {
-			encode(&s,m->payload,m->length);
-		}
+		encode(&s,m->payload,m->length);
 
 		// Finishing encoding and updating buffer
 		buf_left = encode_end(&s);

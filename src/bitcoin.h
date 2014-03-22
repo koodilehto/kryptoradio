@@ -10,15 +10,15 @@
 
 /**
  * Message types. Order also defines priority in transmission. The
- * priority is descending, meaning that BLOCK has priority over TX.
+ * priority is descending, meaning that TX has priority over BLOCK.
  * UNDEFINED doesn't match anything in Bitcoin Specification and
  * should never be stored (used internally in incoming_node_data()
  * when type is not known yet).
  */
 enum msg_type {
 	UNDEFINED,
-	BLOCK,
 	TX,
+	BLOCK,
 	ADDR,
 	VERSION,
 	VERACK,
@@ -144,6 +144,12 @@ struct bitcoin_storage bitcoin_new_storage();
  * constant pointers to data.
  */
 bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m);
+
+/**
+ * Inserts given inventory hash to send queue. This doesn't add the
+ * object to inventory. You must do it manually.
+ */
+void bitcoin_enqueue(struct bitcoin_storage const *st, guchar *key);
 
 /**
  * Fetches unsent message with highest sending priority.
