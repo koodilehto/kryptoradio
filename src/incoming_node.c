@@ -132,8 +132,8 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 		// Traverse all transactions in the block and allocate
 		// memory separately for each transaction.
 		guint8 *hash_p = COMPACT->block.txs;
-		const guint64 txs = get_var_int((const guint8**)&hash_p); // Argh, typecasts
 		const guint8 *p = hash_p;
+		const guint64 txs = get_var_int(&p);
 		guchar* key = NULL;
 
 		for (guint64 tx_i=0; tx_i<txs; tx_i++) {
