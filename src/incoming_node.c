@@ -8,11 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <openssl/sha.h>
 #include "bitcoin.h"
 #include "log.h"
 
 // Share memory with compact struct
 #define COMPACT ((struct msg *)buf)
+
+// Height of an unconfirmed transaction is high (priority low)
+#define UNCONFIRMED INT_MAX 
 
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
@@ -27,8 +31,7 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 	// Reallocate buffer only if it is too small.
 	if (buf_allocated < buf_pos+buf_left) {
 		buf_allocated = buf_pos+buf_left;
-		buf = realloc(buf,buf_allocated);
-		if (buf == NULL) errx(5,"Memory allocation failed");
+		buf = g_realloc(buf,buf_allocated);
 	}
 
 	const int got = read(fd,(void*)buf+buf_pos,buf_left);
@@ -57,7 +60,6 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 		if (buf_type != INV) {
 			COMPACT->type = buf_type;
 			COMPACT->length = payload_len;
-			COMPACT->height = ~0; // meaning: not important
 			COMPACT->sent = false;
 			// Rewind to compacted payload starting pos
 			buf_pos = offsetof(struct msg,payload);
@@ -98,23 +100,102 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 		
 		break;
 	case TX:
-	case BLOCK:
 		// Free some memory if the buffer is larger than contents
 		if (buf_allocated != buf_pos) {
-			buf = realloc(buf,buf_pos);
-			if (buf == NULL) errx(5,"Memory compaction failed");
+			buf = g_realloc(buf,buf_pos);
 		}
 
-		// Upadate height
-		if (buf_type == BLOCK) {
-			const struct msg *parent = g_hash_table_lookup(st->inv,COMPACT->block.prev_block);
-			if (parent == NULL) {
-				COMPACT->height = 0; // Start orphaned block from 0
+		COMPACT->height = UNCONFIRMED;
+
+		if (bitcoin_inv_insert(st,COMPACT)) {
+			// Do not reuse buffer memory because
+			// it is stored to the inventory
+			buf = NULL;
+			buf_allocated = 0;
+		} else {
+			// If already received, do not do anything
+			warnx("Protocol quirk: duplicate %s %s",
+			      bitcoin_type_str(COMPACT),
+			      hex256(bitcoin_inv_hash(COMPACT)));
+		}
+		break;
+	case BLOCK:
+		;
+		// Set block height
+		const struct msg *parent = g_hash_table_lookup(st->inv,COMPACT->block.prev_block);
+		if (parent == NULL) {
+			COMPACT->height = 0; // Start orphaned block from 0
+		} else {
+			COMPACT->height = parent->height+1;
+		}
+
+		// Traverse all transactions in the block and allocate
+		// memory separately for each transaction.
+		guint8 *hash_p = COMPACT->block.txs;
+		const guint64 txs = get_var_int((const guint8**)&hash_p); // Argh, typecasts
+		const guint8 *p = hash_p;
+		guchar* key = NULL;
+
+		for (guint64 tx_i=0; tx_i<txs; tx_i++) {
+			// If key buffer is not NULL it means the
+			// buffer was not used in last iteration (the
+			// transaction was sent already).
+			if (key == NULL) key = g_malloc(SHA256_DIGEST_LENGTH);
+
+			// Find out tx length and position and check
+			// if tx already exists
+			int length = bitcoin_tx_len(p);
+			const guchar *hash = dhash(p,length,key);
+			struct msg *tx = g_hash_table_lookup(st->inv,hash);
+
+			if (tx == NULL) {
+				// Transaction has not seen yet.
+				// Allocate storage for new tx.
+				tx = g_malloc(offsetof(struct msg,payload)+length);
+				// Set headers
+				tx->length = length;
+				tx->sent = false;
+				tx->type = TX;
+				tx->height = COMPACT->height;
+
+				// Fill with tx data
+				memcpy(tx->payload, p, length);
+
+				// Insert
+				g_hash_table_insert(st->inv,key,tx);
 			} else {
-				COMPACT->height = parent->height+1;
+				// Tune existing tx height
+				tx->height = COMPACT->height;
+			}
+
+			// Debugging
+			printf("Block tx %s, net bytes %d, sent %d\n",
+			       hex256(key), length-SHA256_DIGEST_LENGTH, tx->sent);
+
+			// Overwrite transaction data by its hash and
+			// advance pointers. Do not touch p after this.
+			memcpy(hash_p, key, SHA256_DIGEST_LENGTH);
+			hash_p += SHA256_DIGEST_LENGTH;
+			p += length;
+
+			// Requeue transaction if it is not sent, even
+			// if it is enqueued already.
+			if (!tx->sent) {
+				bitcoin_enqueue(st,key);
+				key = NULL; // Force reallocation for key
 			}
 		}
 
+		// Sanity checks
+		if (p != COMPACT->payload + COMPACT->length) {
+			errx(9,"Block length doesn't match to contents");
+		}
+
+		// Free unused memory freed by using hashes
+		COMPACT->length = hash_p - COMPACT->payload;
+		buf = g_realloc(buf, hash_p - (guint8*)buf);
+
+		// Finally, put the block in send queue
 		if (bitcoin_inv_insert(st,COMPACT)) {
 			// Do not reuse buffer memory because
 			// it is stored to the inventory
