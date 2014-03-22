@@ -141,7 +141,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		const int max_buffer_len = 2+2*(1+72+1+m->length);
 		// Reallocate buffer
 		if (buf_allocated < max_buffer_len) {
-			buf_start = g_renew(guint8,buf_start,max_buffer_len);
+			buf_start = g_realloc(buf_start,max_buffer_len);
 			buf_allocated = max_buffer_len;
 		}
 

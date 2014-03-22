@@ -110,7 +110,7 @@ struct bitcoin_storage bitcoin_new_storage()
 	// st.inv owns the key. Items in inventory must NOT be removed
 	// before they are dequeued from send queue!
 	struct bitcoin_storage st;
-	st.inv = g_hash_table_new_full(&dhash_hash,dhash_eq,free,free);
+	st.inv = g_hash_table_new_full(&dhash_hash,dhash_eq,g_free,g_free);
 	st.send_queue = g_sequence_new(NULL);
 	return st;
 }
@@ -118,13 +118,12 @@ struct bitcoin_storage bitcoin_new_storage()
 bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 {
 	// Allocate buffer for key and calculate hash of a message
-	guchar* key = malloc(SHA256_DIGEST_LENGTH);
-	if (key == NULL) errx(5,"Memory allocation failed");
+	guchar* key = g_malloc(SHA256_DIGEST_LENGTH);
 	bitcoin_inv_hash_buf(m, key);
 
 	// If key is already stored, do not replace old one
 	if (g_hash_table_contains(st->inv,key)) {
-		free(key);
+		g_free(key);
 		return false;
 	}
 

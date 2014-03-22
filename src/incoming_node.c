@@ -27,8 +27,7 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 	// Reallocate buffer only if it is too small.
 	if (buf_allocated < buf_pos+buf_left) {
 		buf_allocated = buf_pos+buf_left;
-		buf = realloc(buf,buf_allocated);
-		if (buf == NULL) errx(5,"Memory allocation failed");
+		buf = g_realloc(buf,buf_allocated);
 	}
 
 	const int got = read(fd,(void*)buf+buf_pos,buf_left);
@@ -101,8 +100,7 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 	case BLOCK:
 		// Free some memory if the buffer is larger than contents
 		if (buf_allocated != buf_pos) {
-			buf = realloc(buf,buf_pos);
-			if (buf == NULL) errx(5,"Memory compaction failed");
+			buf = g_realloc(buf,buf_pos);
 		}
 
 		// Upadate height
