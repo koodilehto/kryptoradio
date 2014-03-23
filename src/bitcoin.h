@@ -8,6 +8,9 @@
 #include <glib.h>
 #include <stdbool.h>
 
+// Height of an unconfirmed transaction is high (priority low)
+#define UNCONFIRMED INT_MAX 
+
 /**
  * Message types. Order also defines priority in transmission. The
  * priority is descending, meaning that TX has priority over BLOCK.

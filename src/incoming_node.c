@@ -15,9 +15,6 @@
 // Share memory with compact struct
 #define COMPACT ((struct msg *)buf)
 
-// Height of an unconfirmed transaction is high (priority low)
-#define UNCONFIRMED INT_MAX 
-
 // Processes messages having this format:
 // https://en.bitcoin.it/wiki/Protocol_specification#Message_structure
 void incoming_node_data(const int fd, struct bitcoin_storage *const st)
@@ -169,8 +166,10 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 			}
 
 			// Debugging
-			printf("Block tx %s, net bytes %d, sent %d\n",
-			       hex256(key), length-SHA256_DIGEST_LENGTH, tx->sent);
+			printf("Block tx %s, net bytes %d, %s\n",
+			       hex256(key), 
+			       tx->sent ? SHA256_DIGEST_LENGTH-length : SHA256_DIGEST_LENGTH,
+			       tx->sent ? "old" : "new");
 
 			// Overwrite transaction data by its hash and
 			// advance pointers. Do not touch p after this.
