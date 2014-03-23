@@ -144,6 +144,7 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 			int length = bitcoin_tx_len(p);
 			const guchar *hash = dhash(p,length,key);
 			struct msg *tx = g_hash_table_lookup(st->inv,hash);
+			const bool new_tx = tx == NULL;
 
 			if (tx == NULL) {
 				// Transaction has not seen yet.
@@ -166,10 +167,10 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 			}
 
 			// Debugging
-			printf("Block tx %s, net bytes %d, %s\n",
+			printf("Block tx %s, %-7s %5d bytes\n",
 			       hex256(key), 
-			       tx->sent ? SHA256_DIGEST_LENGTH-length : SHA256_DIGEST_LENGTH,
-			       tx->sent ? "old" : "new");
+			       new_tx ? "new," : tx->sent ? "sent," : "queued,",
+			       length);
 
 			// Overwrite transaction data by its hash and
 			// advance pointers. Do not touch p after this.

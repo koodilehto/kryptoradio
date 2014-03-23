@@ -168,17 +168,17 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		buf_p = buf_start;
 		escaped = false;
 
-		// Debugging information
-		char height_buf[20] = "unconfirmed";
+		// Debugging
+		char height_buf[20] = "";
 		if (m->height != UNCONFIRMED) {
 			snprintf(height_buf,sizeof(height_buf),
-				 "height %d",m->height);
+				 " @ %d",m->height);
 		}
-		printf("Sending %s %s, bytes %d, %s, queue size %d\n",
+		printf("Sending %s %s%s, %d bytes, %d items left\n",
 		       bitcoin_type_str(m),
 		       hex256(bitcoin_inv_hash(m)),
-		       m->length,
 		       height_buf,
+		       m->length,
 		       queued);
 	}
 
