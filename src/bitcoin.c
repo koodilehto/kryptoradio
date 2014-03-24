@@ -35,6 +35,9 @@ static const guint8 join_message[] = {
 	0xC0, 0x3E, 0x03, 0x00
 };
 
+// Helper for building comparators. Is integer overflow safe.
+#define COMPARE(a,b) { if ((a) != (b)) return ((a) < (b)) ? -1 : 1; }
+
 guint64 var_int(const guint8 *const buf)
 {
 	if (*buf == 0xfd) return GUINT16_FROM_LE(*(guint16*)(buf+1));
@@ -216,16 +219,16 @@ static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 	}
 
 	// Already sent items are pushed towards the small end to aid
-	// them getting out of the queue
-	if (msg_a->sent) return -1;
-	if (msg_b->sent) return 1;
+	// them getting out of the queue (true has value of 1 in
+	// stdbool.h and therefore a and b are swapped)
+	COMPARE(msg_b->sent,msg_a->sent);
 
 	// Send lowest height first
-	if (msg_a->height != msg_b->height) return msg_a->height - msg_b->height; 
+	COMPARE(msg_a->height,msg_b->height);
 
 	// Send transactions first, then block. The priority is defined
 	// by the enum in bitcoin.h
-	if (msg_a->type != msg_b->type) return msg_a->type - msg_b->type;
+	COMPARE(msg_a->type,msg_b->type);
 
 	// Now we may have two unconfirmed transactions, two blocks of
 	// same height (fork) or two transactions belonging to the
