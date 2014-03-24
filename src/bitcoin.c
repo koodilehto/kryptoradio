@@ -207,8 +207,13 @@ static gint comparator(gconstpointer a, gconstpointer b, gpointer inv)
 	const struct msg *msg_b = g_hash_table_lookup(inv,b);
 
 	if (msg_a == NULL || msg_b == NULL) {
+		char hash_a[2*SHA256_DIGEST_LENGTH+1];
+		char hash_b[2*SHA256_DIGEST_LENGTH+1];
+		strcpy(hash_a,hex256(a));
+		strcpy(hash_b,hex256(b));
+
 		errx(9,"Inventory hash lookup failed. a=%s b=%s",
-		     (char *)a,(char *)b);
+		     hash_a,hash_b);
 	}
 
 	// Already sent items are pushed towards the small end to aid
