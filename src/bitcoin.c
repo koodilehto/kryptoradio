@@ -115,7 +115,7 @@ struct bitcoin_storage bitcoin_new_storage()
 	return st;
 }
 
-bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
+bool bitcoin_inv_insert(struct bitcoin_storage *const st, struct msg *const m)
 {
 	// Allocate buffer for key and calculate hash of a message
 	guchar* key = g_malloc(SHA256_DIGEST_LENGTH);
@@ -136,12 +136,12 @@ bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m)
 	return true;
 }
 
-void bitcoin_enqueue(struct bitcoin_storage const *st, guchar *key)
+void bitcoin_enqueue(struct bitcoin_storage *const st, guchar *key)
 {
 	g_sequence_insert_sorted(st->send_queue,key,comparator,st->inv);
 }
 
-struct msg *bitcoin_dequeue(struct bitcoin_storage const *st)
+struct msg *bitcoin_dequeue(struct bitcoin_storage *const st)
 {
 	// Fetch and dequeue key
 	GSequenceIter *it = g_sequence_get_begin_iter(st->send_queue);

@@ -146,18 +146,18 @@ struct bitcoin_storage bitcoin_new_storage();
  * modify m, but it is not declared as const because glib doesn't have
  * constant pointers to data.
  */
-bool bitcoin_inv_insert(struct bitcoin_storage const *st, struct msg *const m);
+bool bitcoin_inv_insert(struct bitcoin_storage *const st, struct msg *const m);
 
 /**
  * Inserts given inventory hash to send queue. This doesn't add the
  * object to inventory. You must do it manually.
  */
-void bitcoin_enqueue(struct bitcoin_storage const *st, guchar *key);
+void bitcoin_enqueue(struct bitcoin_storage *const st, guchar *key);
 
 /**
  * Fetches unsent message with highest sending priority.
  */
-struct msg *bitcoin_dequeue(struct bitcoin_storage const *st);
+struct msg *bitcoin_dequeue(struct bitcoin_storage *const st);
 
 /**
  * Returns message type of given wire message.
