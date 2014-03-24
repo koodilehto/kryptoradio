@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "heap.h"
 #include "bitcoin.h"
 
 // Local prototypes
@@ -111,7 +112,7 @@ struct bitcoin_storage bitcoin_new_storage()
 	// before they are dequeued from send queue!
 	struct bitcoin_storage st;
 	st.inv = g_hash_table_new_full(&dhash_hash,dhash_eq,g_free,g_free);
-	st.send_queue = g_sequence_new(NULL);
+	heap_init(&st.send_queue);
 	return st;
 }
 
@@ -138,15 +139,13 @@ bool bitcoin_inv_insert(struct bitcoin_storage *const st, struct msg *const m)
 
 void bitcoin_enqueue(struct bitcoin_storage *const st, guchar *key)
 {
-	g_sequence_insert_sorted(st->send_queue,key,comparator,st->inv);
+	heap_insert(&st->send_queue,key,comparator,st->inv);
 }
 
 struct msg *bitcoin_dequeue(struct bitcoin_storage *const st)
 {
 	// Fetch and dequeue key
-	GSequenceIter *it = g_sequence_get_begin_iter(st->send_queue);
-	guchar *key = g_sequence_get(it);
-	g_sequence_remove(it);
+	guchar *key = heap_pop(&st->send_queue, comparator, st->inv);
 	
 	// Fetch value (or NULL in case of failure)
 	return g_hash_table_lookup(st->inv,key);

@@ -7,6 +7,7 @@
 
 #include <glib.h>
 #include <stdbool.h>
+#include "heap.h"
 
 // Height of an unconfirmed transaction is high (priority low)
 #define UNCONFIRMED INT_MAX 
@@ -80,7 +81,7 @@ struct msg {
  */
 struct bitcoin_storage {
 	GHashTable *inv;
-	GSequence *send_queue;
+	struct heap send_queue;
 };
 
 // TODO function comments

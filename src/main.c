@@ -112,7 +112,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 	static bool escaped = false; // Minor optimization when using
 				     // continuous transmit mode
 
-	gint queued = g_sequence_get_length(st->send_queue);
+	gint queued = heap_size(&st->send_queue);
 
 	if (!buf_left && queued) {
 		// Try to fill send buffer

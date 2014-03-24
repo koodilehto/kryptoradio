@@ -131,24 +131,25 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 		guint8 *hash_p = COMPACT->block.txs;
 		const guint8 *p = hash_p;
 		const guint64 txs = get_var_int(&p);
-		guchar* key = NULL;
 
 		for (guint64 tx_i=0; tx_i<txs; tx_i++) {
-			// If key buffer is not NULL it means the
-			// buffer was not used in last iteration (the
-			// transaction was sent already).
-			if (key == NULL) key = g_malloc(SHA256_DIGEST_LENGTH);
-
 			// Find out tx length and position and check
-			// if tx already exists
-			int length = bitcoin_tx_len(p);
-			const guchar *hash = dhash(p,length,key);
-			struct msg *tx = g_hash_table_lookup(st->inv,hash);
-			const bool new_tx = tx == NULL;
+			// if tx already exists. Fetch the original hash if it exists
+			guchar* key;
+			struct msg *tx;
+			const int length = bitcoin_tx_len(p);
+			const guchar *const ref_hash = dhash(p,length,NULL);
+			const bool new_tx = 
+				!g_hash_table_lookup_extended(st->inv, ref_hash,
+							      (gpointer *)&key,
+							      (gpointer *)&tx);
 
-			if (tx == NULL) {
-				// Transaction has not seen yet.
-				// Allocate storage for new tx.
+			if (new_tx) {
+				// Fill in key data
+				key = g_malloc(SHA256_DIGEST_LENGTH);
+				memcpy(key,ref_hash,SHA256_DIGEST_LENGTH);
+
+				// Allocate storage for tx
 				tx = g_malloc(offsetof(struct msg,payload)+length);
 				// Set headers
 				tx->length = length;
@@ -178,11 +179,10 @@ void incoming_node_data(const int fd, struct bitcoin_storage *const st)
 			hash_p += SHA256_DIGEST_LENGTH;
 			p += length;
 
-			// Requeue transaction if it is not sent, even
-			// if it is enqueued already.
+			// Enqueue transaction if it is not yet sent,
+			// even if it is enqueued already.
 			if (!tx->sent) {
 				bitcoin_enqueue(st,key);
-				key = NULL; // Force reallocation for key
 			}
 		}
 
