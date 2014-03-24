@@ -18,31 +18,32 @@
  */
 
 /*
- * Minimum heap which doesn't break if comparator is a bit
- * unstable. In our send queue items may gain higher priority if they
- * are sent or included in the block. This heap supports only SHA256
- * hashes and uses Glib comparators. The implementation is minimal and
+ * Minimum heap
+ * 
+ * This heap is somewhat modelled after Glib sequences and it uses
+ * Glib comparators and data types. The implementation is minimal and
  * has some deficiencies: There is no destructor and storage is never
- * freed if number of elements in the heap decreases. It reuses
- * storage so no real memory leak occurs.
+ * freed if number of elements in the heap decreases. Anyway, it
+ * reuses storage so no real memory leak occurs.
+ *
+ * Special care is taken to support cases where comparator is a bit
+ * unstable. In our send queue items may gain higher priority if they
+ * are sent or included in the block so this is safer than using Glib
+ * sequences which use balanced trees. In these cases just insert the
+ * item again if its priority changes and keep a separate book of
+ * popped (=sent) items.
  */
 
 #ifndef HEAP_H_
 #define HEAP_H_
 
-#include <openssl/sha.h>
 #include <glib.h>
-
-/**
- * Heap item is an SHA256 hash
- */
-typedef guint8 heap_item[SHA256_DIGEST_LENGTH];
 
 /**
  * Heap contains pointer to heap array and size information.
  */
 struct heap {
-	heap_item *data;
+	gpointer *data;
 	int size;
 	int allocated;
 };
@@ -53,27 +54,15 @@ struct heap {
 void heap_init(struct heap *a);
 
 /**
- * Gets storage for the item. This must be called prior
- * insertion. After calling this you need to fill in the
- * hash. Insertion is finished using heap_finish_insert(). If you
- * decide not to insert, just don't call heap_finish_insert(). You
- * don't need to undo heap_new_item() because it may be called
- * multiple times.
+ * Insert item to the heap. The use of comparator is consistent with
+ * Glib sequences. Insertion complexity is O(log n).
  */
-heap_item *heap_new_item(struct heap *a);
+void heap_insert(struct heap *a, gpointer data, GCompareDataFunc cmp_func, gpointer cmp_data);
 
 /**
- * Finish insertion. Severe damage is done if you call this function
- * without calling heap_new_item() first. This call expects there is a
- * new item in the buffer returned by heap_new_item() and it places it
- * to the correct position in the heap.
+ * Removes smallest item from the heap. The pointer is not freed.
  */
-void heap_finish_insert(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data);
-
-/**
- * Removes smallest item from the heap.
- */
-heap_item *heap_pop(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data);
+gpointer heap_pop(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data);
 
 /**
  * Returns the number of items in the heap.

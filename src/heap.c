@@ -17,11 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include "heap.h"
 
 // Local functions
-static void swap_hashes(void *a, void *b);
+static void swap_pointers(gpointer *a, gpointer *b);
 
 void heap_init(struct heap *a)
 {
@@ -30,46 +29,46 @@ void heap_init(struct heap *a)
 	a->allocated = 0;
 }
 
-heap_item *heap_new_item(struct heap *a)
+void heap_insert(struct heap *a, gpointer data,
+		 GCompareDataFunc cmp_func, gpointer cmp_data)
 {
 	if (a->size == a->allocated) {
 		// Enlarge heap
 		a->allocated++;
-		a->data = g_renew(heap_item,a->data,a->allocated);
+		a->data = g_renew(gpointer,a->data,a->allocated);
 	}
 
-	// Do not mark item as used (size is not incremented)
-	return a->data + a->size;
-}
+	// Store value initially in the end
+	a->data[a->size] = data;
 
-void heap_finish_insert(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data)
-{
 	// To ease addressing, we need a 1-based array.
-	heap_item *const root = a->data - 1;
+	gpointer *const root = a->data - 1;
 	a->size++;
 	int i = a->size;
 
+	// Move item up the tree until it fits in place
 	while (i != 1) {
 		// If order is correct, stop.
-		gint order = cmp_func(root+(i/2), root+i, cmp_data);
+		gint order = cmp_func(root[i/2], root[i], cmp_data);
 		if (order <= 0) break;
 
 		// Order is not correct, must swap
-		swap_hashes(root+(i/2), root+i);
+		swap_pointers(root+(i/2), root+i);
 		
 		// Going up the tree
 		i /= 2;
 	}
 }
 
-heap_item *heap_pop(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data)
+gpointer heap_pop(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data)
 {
-	// Move to-be-removed item to the end
+	// Store to-be-removed item and move the last item to the head
+	const gpointer item = a->data[0];
 	a->size--;
-	swap_hashes(a->data, a->data+a->size);
+	a->data[0] = a->data[a->size];
 
-	// Start pushing root down
-	heap_item *const root = a->data - 1;
+	// Start pushing root down. Using 1-based addressing.
+	gpointer *const root = a->data - 1;
 	int i=1;
 
 	while (2*i <= a->size) {
@@ -80,21 +79,20 @@ heap_item *heap_pop(struct heap *a, GCompareDataFunc cmp_func, gpointer cmp_data
 			// right is out of bounds.
 		} else {
 			// If both are there, must use comparator
-			gint order = cmp_func(root+2*i, root+2*i+1, cmp_data);
+			gint order = cmp_func(root[2*i], root[2*i+1], cmp_data);
 			if (order > 0) smallest_child++;
 		}
 		
 		// Stop if the order is fine.
-		gint order = cmp_func(root+i, root+smallest_child, cmp_data);
+		gint order = cmp_func(root[i], root[smallest_child], cmp_data);
 		if (order <= 0) break;
 
 		// Swap and continue down.
-		swap_hashes(root+i, root+smallest_child);
+		swap_pointers(root+i, root+smallest_child);
 		i = smallest_child;
 	}
 
-	// Return data on removed position
-	return a->data+a->size;
+	return item;
 }
 
 int heap_size(struct heap *a)
@@ -102,10 +100,10 @@ int heap_size(struct heap *a)
 	return a->size;
 }
 
-static void swap_hashes(void *a, void *b)
+static void swap_pointers(gpointer *a, gpointer *b)
 {
-	guint tmp[SHA256_DIGEST_LENGTH];
-	memcpy(tmp, a, SHA256_DIGEST_LENGTH);
-	memcpy(a, b, SHA256_DIGEST_LENGTH);
-	memcpy(b, tmp, SHA256_DIGEST_LENGTH);
+	gpointer tmp;
+	tmp = *a;
+	*a = *b;
+	*b = tmp;
 }
