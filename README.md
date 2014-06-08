@@ -71,12 +71,12 @@ To receive some compensation for your support we provide two plans:
 With €10 worth of bitcoins you are entitled to subscribing to
 [monthly e-mail newsletter](https://bitpay.com/cart/add?itemId=LToHS1sQHsTjXGLzkH1BMW)
 of recent development. With €100 worth of bitcoins you are entitled to
-[premium support](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
+[an hour of consultation](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
 which may be useful if you are planning to integrate bitcoin-broadcast
 with your project. For other plans or alternative licensing, please
 [contact me](mailto:joel.lehtonen+broadcast@iki.fi).
 
 * [Monthly e-mail newsletter](https://bitpay.com/cart/add?itemId=LToHS1sQHsTjXGLzkH1BMW)
-* [Premium support](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
+* [Consultation (1h)](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
 
 All prices include Finnish VAT.
