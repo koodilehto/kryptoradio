@@ -80,3 +80,4 @@ with your project. For other plans or alternative licensing, please
 * [Consultation (1h)](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
 
 All prices include Finnish VAT.
+![QR code to 1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5](/misc/bitcoin_address.png)
