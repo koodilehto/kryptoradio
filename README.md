@@ -65,7 +65,7 @@ See LICENSE file for details. The license text is also available at
 
 ## Supporting
 
-Bitcoin address of this project is 1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5.
+Bitcoin address of this project is [1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5](bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5).
 
 To receive some compensation for your support we provide two plans:
 With €10 worth of bitcoins you are entitled to subscribing to
