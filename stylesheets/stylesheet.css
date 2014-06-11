@@ -80,6 +80,10 @@ header h1 {
   margin-bottom: 0.2em;
   width: 540px;
   padding-top: 10px;
+  font-family: 'Ubuntu', sans-serif;
+  font-weight: bold;
+  font-style: italic;
+  text-transform: lowercase;
 }
 
 header h2 {
