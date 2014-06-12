@@ -41,7 +41,7 @@
 </p>
 <p>Any unidirectional digital transmission path with a sufficient
 error correction is suitable for this project. In addition to DVB-T there are many other possible ways to transmit Bitcoin stream like subcarriers of FM radio transmission, amateur radio, and DAB. We chose DVB-T for our pilot project because of its flexibility and wide support in most parts of the world, shown in blue in the map below (source: <a href="https://en.wikipedia.org/wiki/File:Digital_broadcast_standards.svg">Wikipedia</a>).</p>
-<img src="images/640px-Digital_broadcast_standards.png" title="Terrestrial television systems worldwide. Source: Wikipedia." />
+<img src="images/640px-Digital_broadcast_standards.png" title="Terrestrial television systems worldwide. Public domain. Source: Wikipedia." />
 <p>The software part of this project consists of two separate applications: serializer and deserializer. The former connects to the the
 bitcoin network, receives transactions and blocks, then puts them into
 a queue, which is then processed according to given priorities and finally serialized to a stream of bytes. The result is
