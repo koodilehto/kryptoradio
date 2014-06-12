@@ -64,7 +64,7 @@ a:hover {
 }
 
 header {
-  padding-top: 40px;
+  padding-top: 30px;
   padding-bottom: 40px;
   height: 270px;
   font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif; 
@@ -77,13 +77,16 @@ header h1 {
   font-size: 72px;
   color: #fff;
   line-height: 1;
-  margin-bottom: 0.2em;
+  margin-bottom: 20px;
   width: 540px;
-  padding-top: 10px;
+  padding-top: 20px;
+  padding-left: 180px;
+  padding-bottom: 20px;
   font-family: 'Ubuntu', sans-serif;
   font-weight: bold;
   font-style: italic;
   text-transform: lowercase;
+  background: url("/images/bitcoinbroadcast_logo.png") no-repeat;
 }
 
 header h2 {
