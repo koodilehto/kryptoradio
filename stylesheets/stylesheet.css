@@ -365,6 +365,15 @@ footer a:hover {
   color: #444;
 }
 
+#donation {
+    text-align: center;
+}
+
+#donation img {
+    display: block;
+    margin: 0 auto;
+}
+
 /* MISC */
 .clearfix:after {
   clear: both;
