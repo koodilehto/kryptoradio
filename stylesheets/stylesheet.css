@@ -335,12 +335,12 @@ blockquote {
 }
 
 ul {
-  list-style: disc inside;
+  list-style: disc outside;
   padding-left: 20px;
 }
 
 ol {
-  list-style: decimal inside;
+  list-style: decimal outside;
   padding-left: 3px;
 }
 
