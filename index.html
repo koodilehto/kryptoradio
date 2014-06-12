@@ -75,7 +75,13 @@ LibSSL and Linux. It is licensed under GNU GPL v3. The sources are available at
 <ul>
 <li>Serializer connects and stays in the bitcoin network.</li>
 <li>Serializer knows how to send transactions and blocks to serial port.</li>
-<li>Serializer optimizes the sent blocks by referencing to already sent transactions, and does not retransmit them in a new block (exactly as the bitcoin network normally operates).</li>
+<li>Serializer optimizes the blocks by referencing to already sent
+transactions by their tx id, and does not retransmit them in a new
+block. The receiver assembles the block, keeping it compatible with
+all bitcoin clients. (This is probably the first implementation
+which solves a
+<a href="https://en.bitcoin.it/wiki/Scalability#Network">
+known scalability problem</a> of bitcoin.)</li>
 </ul>
 <p>Not yet finished:</p>
 <ul>
