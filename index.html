@@ -29,37 +29,89 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<h3 id="general-description">General description</h2>
+<p>I am developing a project named bitcoin-broadcast. Its goal is to
+enable bitcoin transactions, block serialization and transmission over
+radio waves. Any one-way digital transmission path with sufficient
+error correction is suitable for this project. The overall goal is to
+use public broadcasting, e.g., digital television (DVB-T) or
+subcarriers of FM radio transmission. At early stages it is natural to
+use license-free frequencies.</p>
+<p>The projects consists of two separate applications: transmitting
+serializer and receiving deserializer. The former connects to the the
+bitcoin network, receives transactions and blocks, then puts them into
+a queue, which is processed according to priorities. The result is
+sent to serial communication apparatus. On the other end, the receiver
+connects to the serial communication apparatus, processes the received
+transactions and blocks, and sends them to bitcoin nodes. The data
+stream can contain other information, such as exchange rates between
+bitcoins and traditional currencies.</p>
+<p>This scheme makes it easy to construct affordable receivers that do
+not need mobile data connections in order to follow bitcoin traffic an
+to react to the received bitcoin payments. This would make it possible
+to build bitcoin counterpart for cash payment terminals, e.g., coin
+operated self-service laundry. If the receiver application followed
+only transactions relevant to itself, it could be build even with an
+8-bit microcontroller. The bill of materials for this kind of receiver
+would be extremely low.</p>
+<p>Already done:</p>
+<ul>
+<li>Serializer connects and stays in the bitcoin network.</li>
+<li>Serializer knows how to send transactions and blocks to serial port.</li>
+<li>Serializer optimizes the sent blocks by referencing to already sent transactions, and does not retransmit them in a new block (exactly as the bitcoin network normally operates).</li>
+</ul>
+<p>Not yet finished:</p>
+<ul>
+<li>Proper transaction prioritization. Currently vulnerable to penny flooding.</li>
+<li>Serial traffic format needs rethinking and someone else's opinion.</li>
+<li>Serial traffic signing. The receiver needs to be sure that the data has not been forged.</li>
+</ul>
+<p>Not yet started:</p>
+<ul>
+<li>Receiver applicaltion (deserializer).</li>
+<li>Testing in real radio network.</li>
+<li>Sending exchange rates.</li>
+</ul>
+<p>The application is programmed in C (gnu99) and it depends on Glib,
+LibSSL and Linux. It is licensed under GNU GPL v3. The sources are in
+GitHub: https://github.com/zouppen/bitcoin-broadcast. The site also
+tells how you can support the project financially. Even more useful
+would be if you know and want to help with the execution of the
+project!</p>
+<h3 id="financing">Financing</h2>
+<p>I will now focus on distribution and financing. Personally, this is
+the more uninteresting part of the project. If someone is interested
+in these practical matters, please contact me.</p>
+<p>The pilot stage could be executed during a couple of months at
+night time (distribution between midnight and 6 a.m.) and smaller
+distribution area, e.g. channel group E, until the system is stable
+enough to be used for 24 hours in the whole country. It would be
+possible to receive the pilot stage transmissions in most areas of
+Finland.</p>
+<p>Because crowdfunding is difficult in Finland, the reward for
+financing the project could be an advertisement, which the startup
+would sell. The contributors would be mentioned in the web page but
+each contributor could create a message that would be randomly
+assigned to the radio transmitted data stream, weighted according to
+the amount of money contributed. Maybe something like this could
+work.</p>
+<p>I have had a quick look at bitcoin crowdfunding. My first
+impression is that the available platforms are not very good either
+technologically or by the number of users. If someone has ideas how to
+collect seed funds for this project, please inform me. A minimum of
+2000 euros (about 5 BTC) would be needed for the pilot stage even if I
+do not count my own work. More would be needed if the tests are
+promising and a wider distribution is in order.</p>
+<p>(If the project's bitcoin address would mysteriously receive &gt;5
+BTC during the next few days, it would be a lot easier because
+financial planning could be pushed forward and the pilot stage could
+be started early.)</p>
+<p>-- Zouppen</p>
+<p>(translation from key messages in
+https://forum.bittiraha.fi/index.php?topic=2284.0 by Tuomo Sipola
+2014-06-11)</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
-
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
         </section>
 
         <aside id="sidebar">
