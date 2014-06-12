@@ -31,31 +31,38 @@
         <section id="main-content">
 
 <h3 id="general-description">General description</h2>
-<p>I am developing a project named bitcoin-broadcast. Its goal is to
-enable bitcoin transactions, block serialization and transmission over
-radio waves. Any one-way digital transmission path with sufficient
-error correction is suitable for this project. The overall goal is to
-use public broadcasting, e.g., digital television (DVB-T) or
-subcarriers of FM radio transmission. At early stages it is natural to
-use license-free frequencies.</p>
-<p>The projects consists of two separate applications: transmitting
-serializer and receiving deserializer. The former connects to the the
+<p>We are developing a project named Bitcoin Radio. Its goal is to
+transmit all bitcoin transactions, blocks, and currency exchange data real-time using Terrestrial television (DVB-T) transmitters around the world. Bitcoins in the air, literally speaking.</p>
+<p>Any unidirectional digital transmission path with a sufficient
+error correction is suitable for this project. In addition to DVB-T there are many other possible ways to transmit Bitcoin stream like subcarriers of FM radio transmission, amateur radio, and DAB. We chose DVB-T for our pilot project because of its flexibility and wide support in most parts of the world.</p>
+<img src="images/640px-Digital_broadcast_standards.png" title="Terrestrial television systems worldwide" />
+<p>The software part of this project consists of two separate applications: serializer and deserializer. The former connects to the the
 bitcoin network, receives transactions and blocks, then puts them into
-a queue, which is processed according to priorities. The result is
-sent to serial communication apparatus. On the other end, the receiver
-connects to the serial communication apparatus, processes the received
-transactions and blocks, and sends them to bitcoin nodes. The data
-stream can contain other information, such as exchange rates between
-bitcoins and traditional currencies.</p>
+a queue, which is then processed according to given priorities and finally serialized to a stream of bytes. The result is
+passed to transmitter. On the other end, a tuner is connected to deserializer
+which parses the incoming stream and emulates a bitcoin node which serves transactions and blocks to all connected bitcoin nodes.
+</p>
+<p>
+The data stream can contain other information, such as exchange rates
+between bitcoins and traditional currencies.</p>
 <p>This scheme makes it easy to construct affordable receivers that do
 not need mobile data connections in order to follow bitcoin traffic an
 to react to the received bitcoin payments. This would make it possible
-to build bitcoin counterpart for cash payment terminals, e.g., coin
-operated self-service laundry. If the receiver application followed
-only transactions relevant to itself, it could be build even with an
-8-bit microcontroller. The bill of materials for this kind of receiver
-would be extremely low.</p>
-<p>Already done:</p>
+to build bitcoin counterpart for cash payment terminals, anything from
+a cash register to a coin operated self-service laundry. If the
+receiver application follows only transactions relevant to itself, it
+could be possible to be build it even using an 8-bit
+microcontroller.</p>
+<p>Also, it allows an alternative way access to Bitcoin network in cases where only very low speed Internet connection is available. When the block sizes grow in the future, this scales up. Handling of 10 megabyte blocks of the future is not an issue. And for every tin foil hat out there, this is a way to connect to Bitcoin network without a trace! You only need on-line accesss when you want to make transactions yourself.</p>
+
+<h3 id="done">Current status:</p>
+
+<h4 id="software">The software:</h4>
+
+<p>The application is programmed in C (gnu99) and it depends on Glib,
+LibSSL and Linux. It is licensed under GNU GPL v3. The sources are available from
+<a href="https://github.com/zouppen/bitcoin-broadcast">GitHub</a>.
+
 <ul>
 <li>Serializer connects and stays in the bitcoin network.</li>
 <li>Serializer knows how to send transactions and blocks to serial port.</li>
@@ -73,22 +80,18 @@ would be extremely low.</p>
 <li>Testing in real radio network.</li>
 <li>Sending exchange rates.</li>
 </ul>
-<p>The application is programmed in C (gnu99) and it depends on Glib,
-LibSSL and Linux. It is licensed under GNU GPL v3. The sources are in
-GitHub: https://github.com/zouppen/bitcoin-broadcast. The site also
-tells how you can support the project financially. Even more useful
-would be if you know and want to help with the execution of the
-project!</p>
-<h3 id="financing">Financing</h2>
-<p>I will now focus on distribution and financing. Personally, this is
-the more uninteresting part of the project. If someone is interested
-in these practical matters, please contact me.</p>
+
+<h4 id="contracts">Distribution contracts and legal questions</h4>
+
+<p>We are currently negotiating of a possibility to start test transmissions in Finland using Digita's DVB-T network. There should be no legal pitfalls in Finland because bitcoin is considered legal (though it has no currency status, yet).</p>
+
 <p>The pilot stage could be executed during a couple of months at
 night time (distribution between midnight and 6 a.m.) and smaller
 distribution area, e.g. channel group E, until the system is stable
 enough to be used for 24 hours in the whole country. It would be
 possible to receive the pilot stage transmissions in most areas of
 Finland.</p>
+
 <p>Because crowdfunding is difficult in Finland, the reward for
 financing the project could be an advertisement, which the startup
 would sell. The contributors would be mentioned in the web page but
@@ -96,6 +99,11 @@ each contributor could create a message that would be randomly
 assigned to the radio transmitted data stream, weighted according to
 the amount of money contributed. Maybe something like this could
 work.</p>
+
+<h3 id="financing">Financing</h2>
+<p>I will now focus on distribution and financing. Personally, this is
+the more uninteresting part of the project. If someone is interested
+in these practical matters, please contact me.</p>
 <p>I have had a quick look at bitcoin crowdfunding. My first
 impression is that the available platforms are not very good either
 technologically or by the number of users. If someone has ideas how to
@@ -107,10 +115,12 @@ promising and a wider distribution is in order.</p>
 BTC during the next few days, it would be a lot easier because
 financial planning could be pushed forward and the pilot stage could
 be started early.)</p>
-<p>-- Zouppen</p>
-<p>(translation from key messages in
-https://forum.bittiraha.fi/index.php?topic=2284.0 by Tuomo Sipola
-2014-06-11)</p>
+
+<h3 id="contribution">How to contribute</h3>
+
+<p>Donations are welcome from outside Finland. (In Finland we have this thing called <a href="http://www.finlex.fi/en/laki/kaannokset/2006/en20060255.pdf">Money Collection Act</a> which means that as it's not legal to ask money without compensation. However it's legal to donate money in Finland. Don't ask me the logic.)</p>
+
+<p>In addition to financial support you are welcome to join the team if you are capable of helping me with the serializer/deserializer, to improve web pages, or anything else. Please contact me by <a href="mailto:joel.lehtonen+broadcast@iki.fi">e-mail</a>.</p>
 
         </section>
 
@@ -124,7 +134,7 @@ https://forum.bittiraha.fi/index.php?topic=2284.0 by Tuomo Sipola
             .tar.gz file
           </a>
 
-          <p class="repo-owner"><a href="https://github.com/zouppen/bitcoin-broadcast">This project</a> is maintained by <a href="https://github.com/zouppen">Joel Lehtonen</a> a member of Koodilehto co-op.</p>
+          <p class="repo-owner"><a href="https://github.com/zouppen/bitcoin-broadcast">This project</a> is maintained by <a href="https://github.com/zouppen">Joel Lehtonen</a>. English translation by <a href="https://github.com/tuomosipola">Tuomo Sipola</a>. Both of us are members of <a href="http://koodilehto.fi">Koodilehto co-op.</a></p>
 
           <p>Site layout is based on Architect theme
           by <a href="https://twitter.com/jasonlong">Jason
