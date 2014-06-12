@@ -1,6 +1,6 @@
 <!-- -*- mode: markdown; coding: utf-8 -*- -->
 
-# Bitcoin broadcastion tool
+# Bitcoin broadcasting tool
 
 The aim of this project is to create a tool which serializes bitcoin
 peer-to-peer network flow and generates constant-bitrate stream for
