@@ -377,6 +377,10 @@ footer a:hover {
     margin: 0 auto;
 }
 
+#finland {
+    float: right;
+}
+
 /* MISC */
 .clearfix:after {
   clear: both;
