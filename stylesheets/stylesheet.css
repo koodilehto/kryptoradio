@@ -499,9 +499,6 @@ footer a:hover {
 }
 
 /* bitcoin progress bar */
-.addressbtc {
-    font-size:60%;
-}
 #cen {
     width:200px;
     margin-left:auto;
@@ -538,8 +535,8 @@ footer a:hover {
 }
 .perbtc {
     width:200px;
-    font-size:80%;
     text-align:center;
+    margin-bottom: 0.5em;
 }
 
 /* Mobile Landscape Size to Tablet Portrait (devices and browsers) */
