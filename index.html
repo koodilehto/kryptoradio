@@ -10,6 +10,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
     <link rel="shortcut icon" href="/favicon.ico" />
+    <script src="javascripts/progressbar.js"></script>
 
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -177,7 +178,9 @@ be started early.)</p>
           <p>Site layout is based on Architect theme
           by <a href="https://twitter.com/jasonlong">Jason
           Long</a>. <a href="https://secure.flickr.com/photos/gsfc/10840840555/">Typhoon
-          Haiyan</a> picture © 2013 JMA/EUMETSAT</p>
+          Haiyan</a> picture © 2013 JMA/EUMETSAT.
+	  <a href="http://jsfiddle.net/is_a_cat/UPtVA/2/">
+	  Bitcoin progress bar</a> by IS_A_CAT</p>
 	  
 	  <p>Please consider a donation of any amount to this project.
 	  Our bitcoin address is: <a href="bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5">1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5</a>
@@ -185,6 +188,13 @@ be started early.)</p>
 	  <p>
 	    <img src="images/bitcoin_address.png" title="QR code of our bitcoin address" />
 	  </p>
+	  <div id='cen'>
+            <p class='perbtc'><span class='ernbtc'>$00</span> of target <span class='totalbtc'>$00</span> (<span class='percentagebtc'>00</span>%) earned.</p>
+            <div id='outer'>
+              <div id='innerbtc'></div>
+            </div>
+            <p class='addressbtc subtext'></p>
+	  </div>
         </aside>
       </div>
     </div>
