@@ -86,7 +86,7 @@ header h1 {
   font-weight: bold;
   font-style: italic;
   text-transform: lowercase;
-  background: url("/images/bitcoinbroadcast_logo.png") no-repeat;
+  background: url("../images/bitcoinbroadcast_logo.png") no-repeat;
 }
 
 header h2 {
