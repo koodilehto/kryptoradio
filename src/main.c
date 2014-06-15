@@ -34,26 +34,46 @@ void encode_init(struct encoder_state *s, guint8 *buf, bool escaped);
 void encode(struct encoder_state *s, const void *src, const int n);
 int encode_end(const struct encoder_state *const s);
 
-/**
- * Converts to integer with nicer error handling than atoi() but nicer
- * interface than strtol() */
-bool to_int(const char *const p, int *const i);
+static gchar *serial_dev = NULL;
+static gint serial_speed = 9600;
+static gchar *node_ip = "127.0.0.1";
+static gint node_port = 8333;
+
+static GOptionEntry entries[] =
+{
+  { "speed", 's', 0, G_OPTION_ARG_INT, &serial_speed, "Serial port baud rate (default: 9600)", "BAUD" },
+  { "file", 'f', 0, G_OPTION_ARG_FILENAME, &serial_dev, "Write bitstream to FILE. Required.", "FILE" },
+  { "host", 'h', 0, G_OPTION_ARG_STRING, &node_ip, "IP address of bitcoin node to connect (default: 127.0.0.1)", "IP" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &node_port, "TCP port of bitcoin node to connect (default: 8333)", "PORT" },
+  { NULL }
+};
 
 int main(int argc, char *argv[])
 {
-	if(argc != 4) {
-		errx(1,"Usage: %s <ip of server> <serial_port> <serial_speed>",argv[0]);
-	} 
+	GError *error = NULL;
+	GOptionContext *context;
+	
+	context = g_option_context_new("- Serializes bitcoin blocks and transactions");
+	g_option_context_add_main_entries(context, entries, NULL);
+	if (!g_option_context_parse(context, &argc, &argv, &error))
+	{
+		g_print("option parsing failed: %s\n", error->message);
+		exit(1);
+	}
+
+	if (serial_dev == NULL) {
+		errx(1,"Option --file is mandatory. Try '%s --help'",argv[0]);
+	}
+
+	if (argc != 1) {
+		errx(1,"Too many arguments on command line. Try '%s --help'",argv[0]);
+	}
 
 	// Prepare serial port
-	int speed;
-	if (!to_int(argv[3],&speed)) {
-		errx(1,"Invalid serial speed %s: Not a number",argv[3]);
-	}
-	int dev_fd = serial_open_raw(argv[2], O_NOCTTY|O_WRONLY|O_NONBLOCK,
-				     speed);
+	int dev_fd = serial_open_raw(serial_dev, O_NOCTTY|O_WRONLY|O_NONBLOCK,
+				     serial_speed);
 	if (dev_fd == -1) {
-		err(2,"Unable to open serial port %s",argv[2]);
+		err(2,"Unable to open serial port %s",serial_dev);
 	}
 
 	// Prepare socket
@@ -68,9 +88,9 @@ int main(int argc, char *argv[])
 	memset(&serv_addr, '0', sizeof(serv_addr)); 
 
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(8333); 
+	serv_addr.sin_port = htons(node_port); 
 
-	if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
+	if(inet_pton(AF_INET, node_ip, &serv_addr.sin_addr) <= 0) {
 		errx(1,"IP address conversion failed");
 	} 
 
@@ -247,11 +267,4 @@ void encode(struct encoder_state *s, const void *const src, const int n)
 int encode_end(const struct encoder_state *const s)
 {
 	return s->p-s->start;
-}
-
-bool to_int(const char *const p, int *const i) {
-	char *endptr;
-	if (*p == '\0') return false;
-	*i = strtol(p, &endptr, 10);
-	return *endptr == '\0';
 }
