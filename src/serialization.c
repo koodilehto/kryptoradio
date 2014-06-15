@@ -156,7 +156,7 @@ int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
                          const unsigned char *seckey,
                          const unsigned char *nonce)
 {
-	const char dummy[] = "kissa ja kaksitoista muuta kissaa";
+	const char dummy[] = "signature";
 	strcpy((char*)sig,dummy);
 	*siglen = sizeof(dummy);
 	return 1;
