@@ -25,7 +25,7 @@ struct encoder_state {
 };
 
 // Prototypes
-void serial(const int devfd, struct bitcoin_storage *const st);
+bool serial(const int devfd, struct bitcoin_storage *const st);
 int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
                          unsigned char *sig, int *siglen,
                          const unsigned char *seckey,
@@ -38,11 +38,13 @@ static gchar *serial_dev = NULL;
 static gint serial_speed = 9600;
 static gchar *node_ip = "127.0.0.1";
 static gint node_port = 8333;
+static gboolean serial_pad = false;
 
 static GOptionEntry entries[] =
 {
   { "speed", 's', 0, G_OPTION_ARG_INT, &serial_speed, "Serial port baud rate (default: 9600)", "BAUD" },
   { "file", 'f', 0, G_OPTION_ARG_FILENAME, &serial_dev, "Write bitstream to FILE. Required.", "FILE" },
+  { "pad", 'a', 0, G_OPTION_ARG_NONE, &serial_pad, "Send padding when send queue is empty", NULL },
   { "host", 'h', 0, G_OPTION_ARG_STRING, &node_ip, "IP address of bitcoin node to connect (default: 127.0.0.1)", "IP" },
   { "port", 'p', 0, G_OPTION_ARG_INT, &node_port, "TCP port of bitcoin node to connect (default: 8333)", "PORT" },
   { NULL }
@@ -110,20 +112,26 @@ int main(int argc, char *argv[])
 
 	printf("Connected.\n");
 
-	struct pollfd fds[] = {{dev_fd,POLLOUT,0},{node_fd,POLLIN,0}};
+	struct pollfd fds[] = {{node_fd,POLLIN,0},{dev_fd,POLLOUT,0}};
+	bool serial_enabled = true;
 
 	// Process messages forever
 	while (true) {
-		const int ret = poll(fds,2,-1);
+		const int ret = poll(fds,serial_enabled ? 2 : 1,-1);
 		if (ret < 1) err(5,"Error while polling");
 
 		// Always serve slow serial first
-		if (fds[0].revents & POLLOUT) serial(dev_fd,&st);
-		if (fds[1].revents & POLLIN) incoming_node_data(node_fd,&st);
+		if (fds[1].revents & POLLOUT) {
+			serial_enabled = serial(dev_fd,&st);
+		}
+		if (fds[0].revents & POLLIN) {
+			incoming_node_data(node_fd,&st);
+			serial_enabled = true;
+		}
 	}
 }
 
-void serial(const int devfd, struct bitcoin_storage *const st)
+bool serial(const int devfd, struct bitcoin_storage *const st)
 {
 	static guint8 *buf_start = NULL; // Start of send buffer
 	static guint8 *buf_p = NULL; // Pointer to next unsent byte
@@ -146,7 +154,7 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 			printf("Already sent %s %s, skipping\n",
 			       bitcoin_type_str(m),
 			       hex256(bitcoin_inv_hash(m)));
-			return;
+			return true;
 		}
 
 		// Mark message as sent
@@ -212,14 +220,26 @@ void serial(const int devfd, struct bitcoin_storage *const st)
 		buf_p += wrote;
 		buf_left -= wrote;
 	} else {
-		// Send empty stuff and go back to waiting loop
+		if (!serial_pad) {
+			// Send escape character after all data has been sent
+			if (!escaped) {
+				const char esc = SERIAL_ESC;
+				const int ret = write(devfd,&esc,1);
+				if (ret < 1) err(4,"Unable to write to serial port");
+				printf("Serial device idle\n");
+				escaped = true;
+			}
+			return false;
+		}
+		// Send padding and go back to waiting loop
 		const char buf[1024];
 		memset(&buf,SERIAL_ESC,sizeof(buf));
 		const int ret = write(devfd,buf,sizeof(buf));
 		if (ret < 1) err(4,"Unable to write to serial port");
 		printf("Sending %d bytes of padding\n",ret);
 		escaped = true;
-	} 
+	}
+	return true;
 }
 
 /**
