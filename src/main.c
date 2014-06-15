@@ -35,14 +35,14 @@ void encode(struct encoder_state *s, const void *src, const int n);
 int encode_end(const struct encoder_state *const s);
 
 static gchar *serial_dev = NULL;
-static gint serial_speed = 9600;
+static gint serial_speed = 0;
 static gchar *node_ip = "127.0.0.1";
 static gint node_port = 8333;
 static gboolean serial_pad = false;
 
 static GOptionEntry entries[] =
 {
-  { "speed", 's', 0, G_OPTION_ARG_INT, &serial_speed, "Serial port baud rate (default: 9600)", "BAUD" },
+  { "speed", 's', 0, G_OPTION_ARG_INT, &serial_speed, "Serial port baud rate (default: do not set)", "BAUD" },
   { "file", 'f', 0, G_OPTION_ARG_FILENAME, &serial_dev, "Write bitstream to FILE. Required.", "FILE" },
   { "pad", 'a', 0, G_OPTION_ARG_NONE, &serial_pad, "Send padding when send queue is empty", NULL },
   { "host", 'h', 0, G_OPTION_ARG_STRING, &node_ip, "IP address of bitcoin node to connect (default: 127.0.0.1)", "IP" },
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 		if (ret < 1) err(5,"Error while polling");
 
 		// Always serve slow serial first
-		if (fds[1].revents & POLLOUT) {
+		if (serial_enabled && (fds[1].revents & POLLOUT)) {
 			serial_enabled = serial(dev_fd,&st);
 		}
 		if (fds[0].revents & POLLIN) {

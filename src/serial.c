@@ -37,6 +37,10 @@ int serial_open_raw(const char *dev, int flags, int speed)
 	int fd = open(dev, flags);
 	if (fd == -1) goto not_open;
 
+	// Zero speed says it should be treated as a normal char
+	// device, not as a serial port
+	if (speed == 0) return fd;
+
 	// Find current configuration
 	struct serial_struct serial;
 	if(ioctl(fd, TIOCGSERIAL, &serial) == -1) goto fail;
