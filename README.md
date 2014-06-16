@@ -16,6 +16,9 @@ Current version connects to given bitcoin node, is capable of
 requesting transaction and block contents, serializing traffic, and
 logging all network messages to a log directory.
 
+See our [project page](http://bitcoinradio.koodilehto.fi/) for a
+longer description.
+
 Email me for more information: <joel.lehtonen+broadcast@iki.fi>
 
 ## Compiling
@@ -63,22 +66,13 @@ General Public License for more details.
 See LICENSE file for details. The license text is also available at
 <http://www.gnu.org/licenses/>.
 
-## Supporting
+## Supporting and contact information
+
+If you want to donate to the project or co-operate in other ways,
+don't hesitate to contact us. Also, if you are planning to integrate
+bitcoin-broadcast with your project and you need alternative
+licensing, please [contact us](mailto:joel.lehtonen+broadcast@iki.fi).
 
 Bitcoin address of this project is [1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5](bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5).
-
-To receive some compensation for your support we provide two plans:
-With €10 worth of bitcoins you are entitled to subscribing to
-[monthly e-mail newsletter](https://bitpay.com/cart/add?itemId=LToHS1sQHsTjXGLzkH1BMW)
-of recent development. With €100 worth of bitcoins you are entitled to
-[an hour of consultation](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
-which may be useful if you are planning to integrate bitcoin-broadcast
-with your project. For other plans or alternative licensing, please
-[contact me](mailto:joel.lehtonen+broadcast@iki.fi).
-
-* [Monthly e-mail newsletter](https://bitpay.com/cart/add?itemId=LToHS1sQHsTjXGLzkH1BMW)
-* [Consultation (1h)](https://bitpay.com/cart/add?itemId=KSfJAsPvg7nnxemnoMzYQo)
-
-All prices include Finnish VAT.
 
 ![QR code to 1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5](/misc/bitcoin_address.png)
