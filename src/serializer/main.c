@@ -11,8 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "incoming_node.h"
-#include "bitcoin.h"
-#include "serial.h"
+#include "../bitcoin.h"
+#include "../serial.h"
 #include "serialization.h"
 
 static gchar *serial_dev = NULL;

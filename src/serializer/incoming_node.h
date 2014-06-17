@@ -2,7 +2,7 @@
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
-#include "bitcoin.h"
+#include "../bitcoin.h"
 
 /**
  * Processes data coming from file descriptor which is assumed to be a

@@ -2,7 +2,7 @@
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
-#include "bitcoin.h"
+#include "../bitcoin.h"
 
 /**
  * Dequeues items from send queue and serialize them to a file

@@ -9,8 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <openssl/sha.h>
-#include "bitcoin.h"
-#include "log.h"
+#include "../bitcoin.h"
+#include "../log.h"
 
 // Share memory with compact struct
 #define COMPACT ((struct msg *)buf)
