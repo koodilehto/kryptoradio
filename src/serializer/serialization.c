@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "linux"; compile-command: "scons -C .." -*-
+/* -*- mode: c; c-file-style: "linux"; compile-command: "scons -C ../.." -*-
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
@@ -8,15 +8,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <err.h>
+#include <zlib.h>
 #include "serialization.h"
 
-#define SERIAL_ESC 0xC0
-#define SERIAL_LITERAL 0x00
-#define SERIAL_START 0x01
+#define PAD_COUNT 100 // If padding is enabled, output this many pads at once
 
 struct encoder_state {
-	guint8 *p;
-	guint8 *start;
+	guint8 *buf;
+	int size;
+	z_stream zlib;
 };
 
 // Prototypes
@@ -24,18 +24,23 @@ int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
                          unsigned char *sig, int *siglen,
                          const unsigned char *seckey,
                          const unsigned char *nonce);
-void encode_init(struct encoder_state *s, guint8 *buf, bool escaped);
-void encode(struct encoder_state *s, const void *src, const int n);
-int encode_end(const struct encoder_state *const s);
+static void encoder_state_init(struct encoder_state *s);
+static void encode_start(struct encoder_state *s);
+static void encode(struct encoder_state *s, void *src, const int n);
+static int encode_end(struct encoder_state *s);
+static void encode_flush(struct encoder_state *const s, const int flush);
 
 bool serialize(const int devfd, struct bitcoin_storage *const st, bool serial_pad)
 {
-	static guint8 *buf_start = NULL; // Start of send buffer
-	static guint8 *buf_p = NULL; // Pointer to next unsent byte
-	static int buf_allocated = 0; // Bytes allocated for buffer
+	static struct encoder_state s;
+	static bool first_run = true;
 	static int buf_left = 0; // Bytes left to send
-	static bool escaped = false; // Minor optimization when using
-				     // continuous transmit mode
+	static int buf_i = 0; // Bytes position of next unsent byte
+
+	if (first_run) {
+		encoder_state_init(&s);
+		first_run = false;
+	}
 
 	gint queued = heap_size(&st->send_queue);
 
@@ -57,18 +62,6 @@ bool serialize(const int devfd, struct bitcoin_storage *const st, bool serial_pa
 		// Mark message as sent
 		m->sent = true;
 
-		/* Pessimistic estimate: Message starts with a header
-		 * (2 bytes) and payload has the following: signature
-		 * length (1) + maximum signature length (72) + type
-		 * (1) + content. Every character triggers escape,
-		 * thus doubling the space needed. */
-		const int max_buffer_len = 2+2*(1+72+1+m->length);
-		// Reallocate buffer
-		if (buf_allocated < max_buffer_len) {
-			buf_start = g_realloc(buf_start,max_buffer_len);
-			buf_allocated = max_buffer_len;
-		}
-
 		// Calculate signature. FIXME: Include type in calculation!
 		
 		// Bitcoin message header in unidirectional
@@ -80,17 +73,15 @@ bool serialize(const int devfd, struct bitcoin_storage *const st, bool serial_pa
 		int siglen;
 		secp256k1_ecdsa_sign(m->payload,m->length,sig,&siglen,NULL,NULL);
 
-		struct encoder_state s;
-		encode_init(&s,buf_start,escaped);
+		encode_start(&s);
 		encode(&s,&siglen,1); // FIXME doesn't work on big endian archs
 		encode(&s,&sig,siglen);
 		encode(&s,&m->type,1); // FIXME doesn't work on big endian archs
 		encode(&s,m->payload,m->length);
 
-		// Finishing encoding and updating buffer
+		// Finishing encoding and updating send buffer
 		buf_left = encode_end(&s);
-		buf_p = buf_start;
-		escaped = false;
+		buf_i = 0;
 
 		// Debugging
 		char height_buf[20] = "";
@@ -108,33 +99,37 @@ bool serialize(const int devfd, struct bitcoin_storage *const st, bool serial_pa
 
 	if (buf_left) {
 		// Consume buffer as much as possible
-		const int wrote = write(devfd,buf_p,buf_left);
+		const int wrote = write(devfd, s.buf+buf_i, buf_left);
 		if (wrote == 0) {
 			errx(3,"Weird behaviour on serial port");
 		} else if (wrote == -1) {
 			err(4,"Unable to write to serial port");
 		}
-		buf_p += wrote;
+		buf_i += wrote;
 		buf_left -= wrote;
 	} else {
 		if (!serial_pad) {
-			// Send escape character after all data has been sent
-			if (!escaped) {
-				const char esc = SERIAL_ESC;
-				const int ret = write(devfd,&esc,1);
-				if (ret < 1) err(4,"Unable to write to serial port");
-				printf("Serial device idle\n");
-				escaped = true;
-			}
+			// All is sent, do not come back until there
+			// is more data availableq
+			printf("Serial device idle\n");
 			return false;
 		}
-		// Send padding and go back to waiting loop
-		const char buf[1024];
-		memset(&buf,SERIAL_ESC,sizeof(buf));
+		// Send padding and go back to waiting loop.
+		guint8 buf[PAD_COUNT*5];
+		int i = 0;
+		while (i < sizeof(buf)) {
+			// Z_SYNC_FLUSH is 5 bytes long:
+			buf[i++] = 0x00;
+			buf[i++] = 0x00;
+			buf[i++] = 0x00;
+			buf[i++] = 0xFF;
+			buf[i++] = 0xFF;
+		}
+
 		const int ret = write(devfd,buf,sizeof(buf));
 		if (ret < 1) err(4,"Unable to write to serial port");
+		if (ret != sizeof(buf)) err(10,"Too large padding buffer or non-linuxy system");
 		printf("Sending %d bytes of padding\n",ret);
-		escaped = true;
 	}
 	return true;
 }
@@ -162,26 +157,56 @@ int secp256k1_ecdsa_sign(const unsigned char *msg, int msglen,
 	return 1;
 }
 
-void encode_init(struct encoder_state *s, guint8 *buf, bool escaped)
+static void encoder_state_init(struct encoder_state *s)
 {
-	s->start = buf;
-	s->p = buf;
-	if (!escaped) {
-		*s->p++ = SERIAL_ESC;
-	}
-	*s->p++ = SERIAL_START;
+	s->size = 128;
+	s->buf = g_malloc(s->size);
+	s->zlib.zalloc = Z_NULL;
+	s->zlib.zfree = Z_NULL;
+	s->zlib.opaque = Z_NULL;
+	int ret = deflateInit(&s->zlib,Z_BEST_COMPRESSION);
+	if (ret != Z_OK) errx(10,"Unable to initialize compressor");
 }
 
-void encode(struct encoder_state *s, const void *const src, const int n)
+static void encode_start(struct encoder_state *s)
 {
-	for (int i=0; i<n; i++) {
-		guint8 byte = ((const guint8*)src)[i];
-		*s->p++ = byte;
-		if (byte == SERIAL_ESC) *s->p++ = SERIAL_LITERAL;
-	}
+	s->zlib.avail_out = s->size;
+	s->zlib.next_out = s->buf;
 }
 
-int encode_end(const struct encoder_state *const s)
+static void encode(struct encoder_state *s, void *src, const int n)
 {
-	return s->p-s->start;
+	s->zlib.next_in = src;
+	s->zlib.avail_in = n;
+	encode_flush(s, Z_NO_FLUSH);
+}
+
+static int encode_end(struct encoder_state *s)
+{
+	// Perform sync flush. It allows to transmit whole packet and
+	// also provides a marker (00 00 FF FF) between packets.
+	encode_flush(s, Z_SYNC_FLUSH);
+	return s->size - s->zlib.avail_out;
+}
+
+static void encode_flush(struct encoder_state *const s, const int flush)
+{
+	while (true) {
+		int ret = deflate(&s->zlib, flush);
+		if (ret != Z_OK) errx(10,"Error in compression");
+
+		if (s->zlib.avail_out) {
+			// Everything fits
+			return;
+		} else {
+			// Double output space and come back
+			const int zlib_index = s->zlib.next_out - s->buf;
+			s->zlib.avail_out += s->size;
+			s->size *= 2;
+			s->buf = g_realloc(s->buf, s->size);
+			// zlib data output pointer must be updated
+			// because g_realloc may move the data
+			s->zlib.next_out = s->buf + zlib_index;
+		}
+	}
 }
