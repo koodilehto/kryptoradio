@@ -9,14 +9,17 @@
 #include <string.h>
 #include <err.h>
 #include <zlib.h>
+#include <time.h>
 #include "serialization.h"
 
 #define PAD_COUNT 100 // If padding is enabled, output this many pads at once
+#define RESET_INTERVAL 15 // Perform Z_FULL_FLUSH after this many seconds
 
 struct encoder_state {
 	guint8 *buf;
 	int size;
 	z_stream zlib;
+	struct timespec next_reset;
 };
 
 // Prototypes
@@ -29,6 +32,22 @@ static void encode_start(struct encoder_state *s);
 static void encode(struct encoder_state *s, void *src, const int n);
 static int encode_end(struct encoder_state *s);
 static void encode_flush(struct encoder_state *const s, const int flush);
+
+/**
+ * Does a "blind full flush" which means that if there is already a
+ * sync flush in the stream, this converts it to a full flush. Because
+ * they differ only in the sense that full flush doesn't use old
+ * dictionary, it is OK to do this kind of stream rewinding trick. You
+ * must have done Z_SYNC_FLUSH or Z_FULL_FLUSH before calling this or
+ * this will seriously damage the stream.
+ */
+static void encode_blind_full_flush(struct encoder_state *const s);
+
+/**
+ * Does a "blind full flush" if more than RESET_INTERVAL has elapsed
+ * after last reset. (see comments in encode_blind_full_flush() for
+ * more details. */
+static void encode_maybe_full_flush(struct encoder_state *const s);
 
 bool serialize(const int devfd, struct bitcoin_storage *const st, bool serial_pad)
 {
@@ -166,12 +185,15 @@ static void encoder_state_init(struct encoder_state *s)
 	s->zlib.opaque = Z_NULL;
 	int ret = deflateInit(&s->zlib,Z_BEST_COMPRESSION);
 	if (ret != Z_OK) errx(10,"Unable to initialize compressor");
+	s->next_reset.tv_sec = 0;
+	s->next_reset.tv_nsec = 0;
 }
 
 static void encode_start(struct encoder_state *s)
 {
 	s->zlib.avail_out = s->size;
 	s->zlib.next_out = s->buf;
+	encode_maybe_full_flush(s);
 }
 
 static void encode(struct encoder_state *s, void *src, const int n)
@@ -209,4 +231,34 @@ static void encode_flush(struct encoder_state *const s, const int flush)
 			s->zlib.next_out = s->buf + zlib_index;
 		}
 	}
+}
+
+static void encode_blind_full_flush(struct encoder_state *const s)
+{
+	encode_flush(s,Z_FULL_FLUSH);
+	// When there are no bits pending, Z_FULL_FLUSH is 5 bytes
+	s->zlib.next_out -= 5;
+	s->zlib.avail_out += 5;
+}
+
+static void encode_maybe_full_flush(struct encoder_state *const s)
+{
+	struct timespec now;
+	// FIXME: This is a Linux specific clock source. Use feature
+	// test macro.
+	if (clock_gettime(CLOCK_MONOTONIC_COARSE, &now)) {
+		err(10,"Unable to get monotonic time");
+	}
+
+	// Do nothing if interval not yet reached
+	if (now.tv_sec < s->next_reset.tv_sec) return;
+	if (now.tv_sec == s->next_reset.tv_sec &&
+	    now.tv_nsec < s->next_reset.tv_nsec) return;
+
+	// Set the time for next sync
+	now.tv_sec += RESET_INTERVAL;
+	s->next_reset = now;
+
+	printf("Doing full flush\n");
+	encode_blind_full_flush(s);
 }
