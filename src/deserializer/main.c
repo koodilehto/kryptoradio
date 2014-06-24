@@ -1,11 +1,16 @@
-/* -*- mode: c; c-file-style: "linux"; compile-command: "scons -C .." -*-
+/* -*- mode: c; c-file-style: "linux"; compile-command: "scons -C ../.." -*-
  *  vi: set shiftwidth=8 tabstop=8 noexpandtab:
  */
 
+#include <err.h>
+#include <fcntl.h> 
+#include <glib.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <err.h>
-#include <glib.h>
+#include <stdbool.h>
+#include "../serial.h"
+#include "deserialization.h"
 
 static gchar *serial_dev = NULL;
 static gint serial_speed = 0;
@@ -40,5 +45,21 @@ int main(int argc, char *argv[])
 		errx(1,"Too many arguments on command line. Try '%s --help'",argv[0]);
 	}
 
-	printf("TODO.\n");
+	// Prepare serial port
+	int dev_fd = serial_open_raw(serial_dev, O_NOCTTY|O_RDONLY|O_NONBLOCK,
+				     serial_speed);
+	if (dev_fd == -1) {
+		err(2,"Unable to open serial port %s",serial_dev);
+	}
+
+	struct pollfd fds[] = {{dev_fd,POLLIN,0}};
+
+	while (true) {
+		const int ret = poll(fds,1,-1);
+		if (ret < 1) err(5,"Error while polling");
+
+		if (fds[0].revents & POLLIN) {
+			deserialize(dev_fd);
+		}
+	}
 }
