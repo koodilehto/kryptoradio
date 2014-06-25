@@ -15,12 +15,14 @@
 static gchar *serial_dev = NULL;
 static gint serial_speed = 0;
 static gint node_port = 8333;
+static gboolean read_write = false;
 
 static GOptionEntry entries[] =
 {
   { "speed", 's', 0, G_OPTION_ARG_INT, &serial_speed, "Serial port baud rate (default: do not set)", "BAUD" },
   { "file", 'f', 0, G_OPTION_ARG_FILENAME, &serial_dev, "Device or file to read for incoming bitstream. (required)", "FILE" },
   { "port", 'p', 0, G_OPTION_ARG_INT, &node_port, "TCP port for listening to incoming bitcoind connections (default: 8333)", "PORT" },
+  { "read-write", 'w', 0, G_OPTION_ARG_NONE, &read_write, "Open the file in read-write mode. This is needed if your input is a FIFO.", NULL },
   { NULL }
 };
 
@@ -46,8 +48,10 @@ int main(int argc, char *argv[])
 	}
 
 	// Prepare serial port
-	int dev_fd = serial_open_raw(serial_dev, O_NOCTTY|O_RDONLY|O_NONBLOCK,
-				     serial_speed);
+	const int access = read_write ? O_RDWR : O_RDONLY;
+	const int dev_fd = serial_open_raw(serial_dev,
+					   O_NOCTTY | O_NONBLOCK | access,
+					   serial_speed);
 	if (dev_fd == -1) {
 		err(2,"Unable to open serial port %s",serial_dev);
 	}
@@ -64,6 +68,13 @@ int main(int argc, char *argv[])
 
 		if (fds[0].revents & POLLIN) {
 			deserialize(dev_fd, &decoder_state);
+		} else if (fds[0].revents & POLLHUP) {
+			errx(2,"The input file is probably a FIFO and the "
+			     "feeder process has died. To avoid this, use "
+			     "-w option");
+		} else {
+			warnx("poll() handling is not correct.");
+			abort();
 		}
 	}
 }
