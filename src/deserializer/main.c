@@ -52,6 +52,10 @@ int main(int argc, char *argv[])
 		err(2,"Unable to open serial port %s",serial_dev);
 	}
 
+	// Initialize decoder
+	struct decoder_state decoder_state;
+	deserialize_init(&decoder_state);
+
 	struct pollfd fds[] = {{dev_fd,POLLIN,0}};
 
 	while (true) {
@@ -59,7 +63,7 @@ int main(int argc, char *argv[])
 		if (ret < 1) err(5,"Error while polling");
 
 		if (fds[0].revents & POLLIN) {
-			deserialize(dev_fd);
+			deserialize(dev_fd, &decoder_state);
 		}
 	}
 }

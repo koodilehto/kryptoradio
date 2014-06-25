@@ -5,17 +5,61 @@
 #include <err.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "deserialization.h"
 
-void deserialize(const int devfd)
+void deserialize_init(struct decoder_state *s)
 {
-	char buf[2048];
-	const int got = read(devfd,buf,2048);
+	s->size = 128;
+	s->buf = g_malloc(s->size);
+	s->zlib.zalloc = Z_NULL;
+	s->zlib.zfree = Z_NULL;
+	s->zlib.opaque = Z_NULL;
+	s->zlib.avail_in = 0;
+	s->zlib.next_in = Z_NULL;
+	s->zlib.avail_out = s->size;
+	s->zlib.next_out = s->buf;
+	int ret = inflateInit(&s->zlib);
+	if (ret != Z_OK) errx(10,"Unable to initialize decompressor");
+}
 
-	if (got == 0) {
+void deserialize(const int devfd, struct decoder_state *s)
+{
+	guint8 buf[2048];
+	s->zlib.avail_in = read(devfd,buf,2048);
+	s->zlib.next_in = buf; 
+
+	printf("Got %d bytes\n",s->zlib.avail_in);
+
+	if (s->zlib.avail_in == 0) {
 		errx(3,"Unexpected end of bitcoin stream");
-	} else if (got == -1) {
+	} else if (s->zlib.avail_in == -1) {
 		err(3,"Error reading bitcoind stream");
 	}
 
-	printf("Got %d bytes\n",got);
+	do {
+		const int before = s->zlib.avail_out;
+		const int ret = inflate(&s->zlib, Z_BLOCK);
+		if (ret != Z_OK) {
+			errx(10,"Decoding error. Error code %d. Desync?", ret);
+		}
+
+		if (s->zlib.avail_out == 0) {
+			// Double output space and come back
+			const int zlib_index = s->zlib.next_out - s->buf;
+			s->zlib.avail_out += s->size;
+			s->size *= 2;
+			s->buf = g_realloc(s->buf, s->size);
+			// zlib data output pointer must be updated
+			// because g_realloc may move the data
+			s->zlib.next_out = s->buf + zlib_index;
+		} else if (s->zlib.avail_out == before) {
+			// We've got a packet
+			int packet_len = s->zlib.next_out - s->buf;
+			printf("Got a packet of %d bytes\n", packet_len);
+
+			// No processing yet. Just rewind the buffer.
+			s->zlib.next_out = s->buf;
+			s->zlib.avail_out = s->size;
+		}
+	} while (s->zlib.avail_in);
 }
