@@ -3,12 +3,14 @@
  */
 
 #include <glib.h>
+#include <stdbool.h>
 #include <zlib.h>
 
 struct decoder_state {
 	guint8 *buf;
 	int size;
 	z_stream zlib;
+	bool has_sync;
 };
 
 /**
