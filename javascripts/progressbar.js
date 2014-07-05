@@ -1,7 +1,7 @@
 // bitcoin progress bar by IS_A_CAT. This is proof of cnecept work and needs some serious tinkering/cleaning. 
 // To use, stick thi javascript on your page. innerbtc will take up a percentage of it's parent div relative to the percentage of your goal raised. This is compatible with most css progress bars (anything using the div in div method).
 var address = '1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5',
-    total = 2000, // Your bitcoin goal
+    total = 4776, // Your bitcoin goal
     currency = "EUR"; // anything from this list https://blockchain.info/ticker
 var info, ticker;
 

@@ -87,18 +87,19 @@ all bitcoin clients. (This is probably the first implementation
 which solves a
 <a href="https://en.bitcoin.it/wiki/Scalability#Network">
 known scalability problem</a> of bitcoin.)</li>
+<li><a href="http://en.wikipedia.org/wiki/Zlib">Zlib</a> compression of transaction and block data. Compression ratio on real data is about 1.25.</li>
 </ul>
 <p>Not yet finished:</p>
 <ul>
 <li>Proper transaction prioritization. Currently vulnerable to penny flooding.</li>
 <li>Serial traffic format needs rethinking and someone else's opinion.</li>
 <li>Serial traffic signing. The receiver needs to be sure that the data has not been forged.</li>
+<li>Receiver application (deserializer and DVB receiver).</li>
 </ul>
 <p>Not yet started:</p>
 <ul>
-<li>Receiver applicaltion (deserializer).</li>
 <li>Testing in real radio networks.</li>
-<li>Sending exchange rates.</li>
+<li>Sending of exchange rates.</li>
 </ul>
 
 <h4 id="contracts">Distribution contracts and legal questions</h4>
@@ -109,13 +110,12 @@ known scalability problem</a> of bitcoin.)</li>
        title="Coverage map of Digita E multiplex. Remake of original." />
 </a>
 
-<p>We are currently negotiating of a possibility to start test transmissions in Finland using Digita's DVB-T network. There should be no legal pitfalls in Finland because bitcoin is considered legal (though it has no currency status, yet).</p>
-
-<p>The pilot stage could be executed during a couple of months at
-night time (distribution between midnight and 6 a.m.) and smaller
-distribution of densely populated areas of Finland. Channel group E
-would be sufficient for pilot stage. Click the map on the right for
-more information. (Map source:
+<p>We have successfully finished negotiations for pilot stage (test
+transmissions) in Finland using Digita's nationwide DVB-T network. The
+pilot stage is executed during two months when the signal is
+broadcasted 24 hours a day over densely populated areas of
+Finland. Channel group E is selected for pilot stage. Click the map on
+the right for more information. (Map source:
 <a href="http://fi.wikipedia.org/wiki/Tiedosto:Suomi.karttapohja.svg">
 Wikipedia</a>) For detailled coverage, see Digita's
 <a href="http://www.digita.fi/kuluttajat/karttapalvelu/tv_n_karttapalvelu">
@@ -125,34 +125,39 @@ coverage map</a>.</p>
 continuous (24/7) distribution in the whole country and possibly in
 other parts of the world, too.</p>
 
-<p>Because crowdfunding is difficult in Finland, the reward for
-financing the project could be an advertisement, which the upcoming startup
-would sell. The contributors would be mentioned in the web page and in addition
-each contributor could create a message that would be randomly
-assigned to the radio transmitted data stream, weighted according to
-the amount of money contributed.</p>
-
 <h3 id="financing">Financing</h3>
 <p>This section focuses on distribution and financing. Personally, this is
 the more uninteresting part of the project. If someone is interested
 in these practical matters, please <a href="mailto:joel.lehtonen+broadcast@iki.fi">contact me</a>.</p>
+<p><strong>UPDATE</strong> 2014-07-05: We have found a partner who is
+able to cover costs for the pilot stage. The pilot stage will start in
+August or September, 2014 and last for 2 months. More information is
+coming soon.</p>
+<p>There is plan to start regular broadcasting soon after the pilot
+stage. A single month of broadcasting on current distribution area
+(multiplex E) including maintenance costs is about 2000 euros (VAT
+included) per month. We are currently looking for partners to that
+stage.</p>
 <p>I have had a quick look at bitcoin crowdfunding. My first
 impression is that the available platforms are not very good either
 technologically or by the number of users. If someone has ideas how to
-collect seed funds for this project, please inform me. A minimum of
-2000 euros (about 5 BTC) would be needed for the pilot stage even if I
-do not count my own work. More would be needed if the tests are
-promising and a wider distribution is in order.</p>
-<p>(If the project's bitcoin address would mysteriously receive &gt;5
-BTC during the next few days, it would be a lot easier because
-financial planning could be pushed forward and the pilot stage could
-be started early.)</p>
+collect funds for this project, please inform me.</p>
+<p>
 
 <!-- Who we are? -->
 
 <h3 id="contribution">How to contribute</h3>
 
-<p>Donations are welcome from outside Finland. (In Finland we have this thing called <a href="http://www.finlex.fi/en/laki/kaannokset/2006/en20060255.pdf">Money Collection Act</a> which means that as it is not legal to ask money without compensation. However, it is legal to donate money.)</p>
+<p>In Finland we have this thing
+called <a href="http://www.finlex.fi/en/laki/kaannokset/2006/en20060255.pdf">Money
+Collection Act</a> which means that as it is not legal to ask money
+without compensation. However, in this case the compensation is the
+radio brooadcast, which should make this legal.</p>
+
+<p><strong>UPDATE</strong> 2014-07-05: The project's bitcoin address
+is still here and all funds sent there will be used for covering
+regular broadcasting costs. If the project gets cancelled, all extra
+funds will be returned to their sending addresses.</p>
 
 <p>In addition to financial support you are welcome to join the team if you are capable of helping me with the serializer/deserializer, to improve web pages, or anything else. Please contact me by <a href="mailto:joel.lehtonen+broadcast@iki.fi">e-mail</a>.</p>
 
