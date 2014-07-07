@@ -54,17 +54,28 @@ hardware you are using.
 ## License
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or (at
-your option) any later version.
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+Affero General Public License for more details.
 
 See LICENSE file for details. The license text is also available at
 <http://www.gnu.org/licenses/>.
+
+The intentional cause of licensing under the terms of GNU Affero
+General Public License is that if you create a derivate work based on
+the source code of this project and start your own broadcasting
+service, you must share its source code. The same restrictions apply
+to the receiver. If this is not desired, you are welcome to purchase a
+commercial license from Koodilehto Co-op.
+
+The protocol itself is not covered by any restrictions. You are
+allowed to implement your own transmitter and receiver from scratch
+for no licensing costs.
 
 ## Supporting and contact information
 
