@@ -68,12 +68,12 @@ See LICENSE file for details. The license text is also available at
 
 The intentional cause of licensing under the terms of GNU Affero
 General Public License is that if you create a derivate work based on
-the source code of this project and start your own broadcasting
-service, you must share its source code. The same restrictions apply
+the source code of this project and start **your own broadcasting
+service**, you must **share its source code**. The same restrictions apply
 to the receiver. If this is not desired, you are welcome to purchase a
 commercial license from Koodilehto Co-op.
 
-The protocol itself is not covered by any restrictions. You are
+**The protocol itself is not covered by any restrictions**. You are
 allowed to implement your own transmitter and receiver from scratch
 for no licensing costs.
 
