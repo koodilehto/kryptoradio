@@ -105,7 +105,7 @@ struct bitcoin_storage {
  * inventory items (blocks and transactions) for receiver.
  */
 struct bitcoin_receive_storage {
-	GHashTable *incoming; // Incoming inventory items
+	GPtrArray *incoming; // Incoming inventory items
 	GHashTable *inv; // Inventory
 	GHashTable *missing_txs; // TXs missing from blocks
 	GHashTable *pending_blocks; // Blocks waiting for TXs
@@ -202,5 +202,12 @@ const char* bitcoin_type_str(const struct msg *m);
  * Returns transaction length by peeking inside given buffer.
  */
 int bitcoin_tx_len(const guint8 *const buf);
+
+/**
+ * Returns a new Bitcoin storage for receiver which is documented in
+ * `struct bitcoin_receive_storage`. TODO: Destructor is not yet
+ * implemented because this data is never deallocated in current code.
+ */
+struct bitcoin_receive_storage bitcoin_new_receive_storage();
 
 #endif /* BITCOIN_H_ */

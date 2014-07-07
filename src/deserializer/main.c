@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 	// Initialize decoder
 	struct decoder_state decoder_state;
 	deserialize_init(&decoder_state);
+	struct bitcoin_receive_storage st = bitcoin_new_receive_storage();
 
 	struct pollfd fds[] = {{dev_fd,POLLIN,0}};
 
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
 		if (ret < 1) err(5,"Error while polling");
 
 		if (fds[0].revents & POLLIN) {
-			deserialize(dev_fd, /* FIXME */ NULL, &decoder_state);
+			deserialize(dev_fd, &st, &decoder_state);
 		} else if (fds[0].revents & POLLHUP) {
 			errx(2,"The input file is probably a FIFO and the "
 			     "feeder process has died. To avoid this, use "

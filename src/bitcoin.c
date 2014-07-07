@@ -33,6 +33,7 @@
 static guint dhash_hash(gconstpointer key);
 static gboolean dhash_eq(gconstpointer a, gconstpointer b);
 static gint comparator(gconstpointer a, gconstpointer b, gpointer user_data);
+static void g_array_free_simple(gpointer array);
 
 // Local constants
 static const guint8 join_message[] = {
@@ -275,4 +276,22 @@ int bitcoin_tx_len(const guint8 *const buf)
 	p += 4; // Skip lock time
 
 	return p-buf;
+}
+
+struct bitcoin_receive_storage bitcoin_new_receive_storage()
+{
+	// st.inv owns the key. Items in inventory must NOT be removed
+	// before they are dequeued from send queue!
+	struct bitcoin_receive_storage st;
+	st.incoming = g_ptr_array_new();
+	st.inv = g_hash_table_new_full(&dhash_hash, dhash_eq, g_free, g_free);
+	st.missing_txs = g_hash_table_new_full(&dhash_hash, dhash_eq,
+					       NULL, g_array_free_simple);
+	st.pending_blocks = g_hash_table_new_full(&dhash_hash, dhash_eq,
+						  NULL, g_free);
+	return st;
+}
+
+static void g_array_free_simple(gpointer array) {
+	g_array_free(array, TRUE);
 }
