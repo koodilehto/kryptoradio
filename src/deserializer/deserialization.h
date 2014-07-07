@@ -21,6 +21,7 @@
 #include <glib.h>
 #include <stdbool.h>
 #include <zlib.h>
+#include "../bitcoin.h"
 
 struct decoder_state {
 	guint8 *buf;
@@ -38,4 +39,4 @@ void deserialize_init(struct decoder_state *s);
 /**
  * Processes incoming data. Does not block.
  */
-void deserialize(const int devfd, struct decoder_state *s);
+void deserialize(const int devfd, struct bitcoin_receive_storage *const st, struct decoder_state *s);

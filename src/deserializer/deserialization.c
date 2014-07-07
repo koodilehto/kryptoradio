@@ -32,6 +32,11 @@
  */
 static void zlib_try_sync(struct decoder_state *s);
 
+/**
+ * Stores received packet for later processing.
+ */
+void store_packet(struct bitcoin_receive_storage *const st, guint8 *buf, int len);
+
 void deserialize_init(struct decoder_state *s)
 {
 	s->has_sync = true;
@@ -48,7 +53,7 @@ void deserialize_init(struct decoder_state *s)
 	if (ret != Z_OK) errx(10,"Unable to initialize decompressor");
 }
 
-void deserialize(const int devfd, struct decoder_state *s)
+void deserialize(const int devfd, struct bitcoin_receive_storage *const st, struct decoder_state *s)
 {
 	guint8 buf[2048];
 	s->zlib.avail_in = read(devfd,buf,2048);
@@ -101,7 +106,9 @@ void deserialize(const int devfd, struct decoder_state *s)
 			int packet_len = s->zlib.next_out - s->buf;
 			printf("Got a packet of %d bytes\n", packet_len);
 
-			// No processing yet. Just rewind the buffer.
+			store_packet(st, s->buf, packet_len);
+
+			// Rewind the receive buffer.
 			s->zlib.next_out = s->buf;
 			s->zlib.avail_out = s->size;
 		}
@@ -125,4 +132,9 @@ static void zlib_try_sync(struct decoder_state *s)
 		// Fatal fail.
 		errx(10,"Unable to sync: zlib error %d", ret);
 	}
+}
+
+void store_packet(struct bitcoin_receive_storage *const st, guint8 *buf, int len)
+{
+	// TODO
 }

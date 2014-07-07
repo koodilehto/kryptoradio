@@ -100,6 +100,17 @@ struct bitcoin_storage {
 	struct heap send_queue;
 };
 
+/**
+ * Stores pointers to various data structures holding bitcoin
+ * inventory items (blocks and transactions) for receiver.
+ */
+struct bitcoin_receive_storage {
+	GHashTable *incoming; // Incoming inventory items
+	GHashTable *inv; // Inventory
+	GHashTable *missing_txs; // TXs missing from blocks
+	GHashTable *pending_blocks; // Blocks waiting for TXs
+};
+
 // TODO function comments
 
 /**
