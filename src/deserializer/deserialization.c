@@ -21,7 +21,9 @@
 #include <assert.h>
 #include <err.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
+#include <openssl/sha.h>
 #include "deserialization.h"
 
 /**
@@ -134,7 +136,45 @@ static void zlib_try_sync(struct decoder_state *s)
 	}
 }
 
-void store_packet(struct bitcoin_receive_storage *const st, guint8 *buf, int len)
+void store_packet(struct bitcoin_receive_storage *const st, guint8 *buf, int raw_len)
 {
-	// TODO
+	// Packet length is a bit shorter when you remove the
+	// header. See serialization.c for encoding format.
+	guint8 *p = buf;
+	
+	// Skip signature for now
+	if (p+1 > buf+raw_len) goto too_short;
+	const guint8 siglen = *p;
+	p += 1 + siglen;
+
+	// Message type
+	if (p+1 > buf+raw_len) goto too_short;
+	const guint8 type = *p;
+	p++;
+
+	// The payload length
+	const int payload_len = buf + raw_len - p;
+
+	// Allocate data and fill it
+	struct msg *m = g_malloc(sizeof(struct msg) + payload_len);
+	m->length = payload_len;
+	// TODO determine height
+	m->sent = false;
+	m->type = type;
+	memcpy(m->payload, p, payload_len);
+
+	// Calculate hash
+	guchar *hash = g_malloc(SHA256_DIGEST_LENGTH);
+	bitcoin_inv_hash_buf(m, hash);
+
+	// Store it
+	g_hash_table_insert(st->inv, hash, m);
+	g_ptr_array_add(st->incoming, hash);
+
+	// Debug output
+	printf("Storing %s %s\n", bitcoin_type_str(m), hex256(hash));
+	return;
+
+too_short:
+	printf("Too short packet (%d bytes), skipping\n", raw_len);
 }
