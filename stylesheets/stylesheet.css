@@ -569,7 +569,9 @@ nav li {
 
 nav .selected {
     padding-bottom: 1em;
-    background-color: rgba(157, 220, 255,0.7);    
+    background: #fafafa url(../images/body-bg.jpg) 0 0 repeat;
+    top: 2px;
+    position: relative;
 }
 
 nav a {
