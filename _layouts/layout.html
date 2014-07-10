@@ -53,26 +53,61 @@
 
         <aside id="sidebar">
           <a href="https://github.com/zouppen/bitcoin-broadcast/zipball/master" class="button">
-            <small>Download</small>
-            .zip file
+            {% if page.lang == 'fi' %}
+	    <small>Lataa tiedosto</small>.zip
+	    {% else %}
+	    <small>Download</small>.zip file
+	    {% endif %}
           </a>
           <a href="https://github.com/zouppen/bitcoin-broadcast/tarball/master" class="button">
-            <small>Download</small>
-            .tar.gz file
+            {% if page.lang == 'fi' %}
+            <small>Lataa tiedosto</small>.tar.gz
+	    {% else %}
+            <small>Download</small>.tar.gz file
+	    {% endif %}
           </a>
 
-          <p class="repo-owner"><a href="https://github.com/zouppen/bitcoin-broadcast">This project</a> is maintained by <a href="https://github.com/zouppen">Joel Lehtonen</a>. Translation assistance and copyediting by <a href="https://github.com/tuomosipola">Tuomo Sipola</a>. Both of us are members of <a href="http://koodilehto.fi">Koodilehto co-op.</a></p>
+	  {% if page.lang == 'fi' %}
+          <p class="repo-owner">
+	  <a href="https://github.com/zouppen/bitcoin-broadcast">Tätä projektia
+          </a> ylläpitää
+          <a href="https://github.com/zouppen">Joel
+          Lehtonen</a>. Englanninkielisessä käännöksessä ja oikoluvussa auttaa
+          <a href="https://github.com/tuomosipola">Tuomo
+          Sipola</a>. Olemme
+          <a href="http://koodilehto.fi">Koodilehto osk:n</a> jäseniä</p>
+
+          <p>Sivun ulkoasu perustuu Architect themeen, jonka on tehnyt
+          <a href="https://twitter.com/jasonlong">Jason
+          Long</a>. Kuva <a href="https://secure.flickr.com/photos/gsfc/10840840555/">
+	  Typhoon Haiyan</a> © 2013 JMA/EUMETSAT.
+      
+	  <p>Haluatko rahoittaa projektia? Ota yhteyttä!
+	  Bitcoin-osoitteemme on
+	  <a href="bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5">
+	  1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5</a>
+	  </p>
+	  {% else %}
+          <p class="repo-owner">
+	  <a href="https://github.com/zouppen/bitcoin-broadcast">This
+          project</a> is maintained
+          by <a href="https://github.com/zouppen">Joel
+          Lehtonen</a>. Translation assistance and copyediting
+          by <a href="https://github.com/tuomosipola">Tuomo
+          Sipola</a>. Both of us are members
+          of <a href="http://koodilehto.fi">Koodilehto co-op.</a></p>
 
           <p>Site layout is based on Architect theme
           by <a href="https://twitter.com/jasonlong">Jason
-          Long</a>. <a href="https://secure.flickr.com/photos/gsfc/10840840555/">Typhoon
-          Haiyan</a> picture © 2013 JMA/EUMETSAT.
+          Long</a>. <a href="https://secure.flickr.com/photos/gsfc/10840840555/">
+	  Typhoon Haiyan</a> picture © 2013 JMA/EUMETSAT.
       
-      <p>Please consider contributing to this project.
-      Our bitcoin address is: <a href="bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5">1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5</a>
-
-      <p>DEBUG: {{ page.url }}</p>
-</p>
+	  <p>Please consider contributing to this project.
+	  Our bitcoin address is:
+	  <a href="bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5">
+	  1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5</a>
+	  </p>
+	  {% endif %}
       <div id='cen'>
         <img src="images/bitcoin_address.png" title="QR code of our bitcoin address" />
       </div>
