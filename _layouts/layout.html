@@ -24,8 +24,16 @@
     <header>
       <div class="inner">
         <h1>Kryptoradio</h1>
-        <h2>Connect to the bitcoin network from anywhere – even without the Internet!</h2>
-        <a href="https://github.com/zouppen/bitcoin-broadcast" class="button"><small>View project on</small>GitHub</a>
+        <h2>
+	  {% if page.lang == 'fi' %}Yhdistä bitcoin-verkkoon mistä tahansa –
+	  jopa ilman Internet-yhteyttä!
+	  {% else %}Connect to the bitcoin network from anywhere –
+	  even without the Internet!
+	  {% endif %}</h2>
+        <a href="https://github.com/zouppen/bitcoin-broadcast" class="button">
+	  {% if page.lang == 'fi' %}<small>Tutustu projektiin</small>GitHubissa
+	  {% else %}<small>View project on</small>GitHub
+	  {% endif %}</a>
       </div>
       <nav>
 	<ul>
