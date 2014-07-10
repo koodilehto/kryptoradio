@@ -90,7 +90,7 @@ header h1 {
   background: url("../images/bitcoinbroadcast_logo.png") no-repeat;
 }
 
-header h2 {
+#slogan {
   font-size: 26px;
   color: #9ddcff;
   font-weight: normal;
@@ -411,13 +411,13 @@ footer a:hover {
   .inner {
     width: 740px;
   }
-  header h1, header h2 {
+  header h1, #slogan {
     width: 340px;
   }
   header h1 {
     font-size: 60px;
   }
-  header h2 {
+  #slogan {
     font-size: 30px;
   }
   #main-content {
@@ -446,13 +446,13 @@ footer a:hover {
   header .inner {
     position: relative;
   }
-  header h1, header h2 {
+  header h1, #slogan {
     width: 100%;
   }
   header h1 {
     font-size: 48px;
   }
-  header h2 {
+  header #slogan {
     font-size: 24px;
   }
   header a.button {
