@@ -400,6 +400,49 @@ footer a:hover {
 * html .clearfix {height: 1%;}
 .clearfix {display: block;}
 
+nav {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    font-size: large;
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: bold;
+    font-style: italic;
+}
+
+nav ul {
+    margin: 0;
+    padding: 0;
+    width: 940px;
+    margin: 0 auto;
+}
+
+nav li {
+    display: inline-block;
+    padding: 0 0.8em;
+    border-top: 1px solid rgb(157,220,255);
+    border-left: 1px solid rgb(157,220,255);
+    border-right: 1px solid black;
+    background-color: rgba(157, 220, 255,0.4);
+    vertical-align: bottom;
+}
+
+nav .selected {
+    padding-bottom: 1em;
+    background: #fafafa url(../images/body-bg.jpg) 0 0 repeat;
+    top: 2px;
+    position: relative;
+}
+
+nav a {
+    color: black;
+    font-weight: bold;
+}
+
+#btc {
+    font-size: smaller;
+}
+
 /* #Media Queries
 ================================================== */
 
@@ -408,7 +451,7 @@ footer a:hover {
 
 /* Tablet Portrait size to standard 960 (devices and browsers) */
 @media only screen and (min-width: 768px) and (max-width: 959px) {
-  .inner {
+  .inner, nav ul {
     width: 740px;
   }
   header h1, #slogan {
@@ -416,6 +459,9 @@ footer a:hover {
   }
   header h1 {
     font-size: 60px;
+    background-size: 133px 92px;
+    padding-left: 150px;
+    padding-top: 17px;
   }
   #slogan {
     font-size: 30px;
@@ -437,7 +483,7 @@ footer a:hover {
 
 /* All Mobile Sizes (devices and browser) */
 @media only screen and (max-width: 767px) {
-  .inner {
+  .inner, nav ul {
     width: 93%;
   }
   header {
@@ -447,10 +493,13 @@ footer a:hover {
     position: relative;
   }
   header h1, #slogan {
-    width: 100%;
+    width: auto;
   }
   header h1 {
     font-size: 48px;
+    background-size: 107px 73px;
+    padding-left: 120px;
+    padding-top: 13px;
   }
   header #slogan {
     font-size: 24px;
@@ -501,6 +550,31 @@ footer a:hover {
     padding-right: 0;
     margin-left: 0;
   }
+  #finland {
+    /* undo layout trick used on larger displays */
+    float: right;
+    margin-top: 0;
+  }
+  #btc {
+    /* Side bar is not floated anymore, no need to make address smaller */
+    font-size: 100%;
+  }
+
+}
+/* Even mode narrow mobile */
+@media only screen and (max-width: 480px) {
+  nav li {
+    display: list-item;
+    width: 10em;
+  }
+  nav .selected {
+    padding-bottom: 0em;
+    position: static;
+  }
+  header {
+    height: auto;
+    padding-bottom: 7em;
+  }
 }
 
 /* bitcoin progress bar */
@@ -542,45 +616,6 @@ footer a:hover {
     width:200px;
     text-align:center;
     margin-bottom: 0.5em;
-}
-
-nav {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    font-size: large;
-    font-family: 'Ubuntu', sans-serif;
-    font-weight: bold;
-    font-style: italic;
-}
-
-nav ul {
-    margin: 0;
-    padding: 0;
-    width: 940px;
-    margin: 0 auto;
-}
-
-nav li {
-    display: inline-block;
-    padding: 0 0.8em;
-    border-top: 1px solid rgb(157,220,255);
-    border-left: 1px solid rgb(157,220,255);
-    border-right: 1px solid black;
-    background-color: rgba(157, 220, 255,0.4);
-    vertical-align: bottom;
-}
-
-nav .selected {
-    padding-bottom: 1em;
-    background: #fafafa url(../images/body-bg.jpg) 0 0 repeat;
-    top: 2px;
-    position: relative;
-}
-
-nav a {
-    color: black;
-    font-weight: bold;
 }
 
 /* Mobile Landscape Size to Tablet Portrait (devices and browsers) */
