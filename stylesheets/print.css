@@ -225,7 +225,7 @@ footer a {
 * html .clearfix {height: 1%;}
 .clearfix {display: block;}
 
-.button, #donation {
+.button, #donation, nav {
     display: none;
 }
 
