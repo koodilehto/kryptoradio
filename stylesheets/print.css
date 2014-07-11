@@ -224,3 +224,19 @@ footer a {
 .clearfix {display: inline-block;}
 * html .clearfix {height: 1%;}
 .clearfix {display: block;}
+
+.button, #donation {
+    display: none;
+}
+
+strong {
+  font-weight: bold;
+}
+
+em {
+  font-style: italic;
+}
+
+#finland {
+  float: right;
+}
