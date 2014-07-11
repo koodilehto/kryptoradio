@@ -559,7 +559,10 @@ nav a {
     /* Side bar is not floated anymore, no need to make address smaller */
     font-size: 100%;
   }
-
+  #donation {
+    /* Hide the second QR code because they are so near to each other */
+    display: none;
+  }
 }
 /* Even mode narrow mobile */
 @media only screen and (max-width: 480px) {
