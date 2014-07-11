@@ -576,6 +576,10 @@ nav a {
     /* If heading hyphenates, make some air before slogan */
     margin-top: 0.5em;
   }
+  #finland {
+    /* Too narrow to float */
+    float: none;
+  }
 }
 
 /* bitcoin progress bar */
