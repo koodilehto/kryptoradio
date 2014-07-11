@@ -78,10 +78,9 @@ header h1 {
   font-size: 72px;
   color: #fff;
   line-height: 1;
-  margin-bottom: 20px;
   padding-top: 20px;
   padding-left: 180px;
-  padding-bottom: 20px;
+  min-height: 110px;
   font-family: 'Ubuntu', sans-serif;
   font-weight: bold;
   font-style: italic;
@@ -458,6 +457,7 @@ nav a {
     background-size: 133px 92px;
     padding-left: 150px;
     padding-top: 17px;
+    min-height: 92px;
   }
   #slogan {
     font-size: 30px;
@@ -493,6 +493,7 @@ nav a {
     background-size: 107px 73px;
     padding-left: 120px;
     padding-top: 13px;
+    min-height: 73px;
   }
   header #slogan {
     font-size: 24px;
@@ -570,6 +571,10 @@ nav a {
   header {
     height: auto;
     padding-bottom: 7em;
+  }
+  #slogan {
+    /* If heading hyphenates, make some air before slogan */
+    margin-top: 0.5em;
   }
 }
 
