@@ -60,17 +60,18 @@ header {
 
 header h1 {
   letter-spacing: -1px;
-  font-size: 48px;
+  font-size: 72px;
   color: #303030;
   line-height: 1.2;
   font-family: 'Ubuntu', sans-serif;
   font-weight: bold;
   font-style: italic;
+  text-transform: lowercase;
 }
 
 #slogan {
   font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif; 
-  font-size: larger;
+  font-size: 18px;
 }
 
 #downloads {
@@ -185,14 +186,13 @@ blockquote {
   padding: 0 0 0 30px;
 }
 
-ul li {
-  list-style: disc inside;
-  padding-left: 20px;
+ul {
+  list-style: disc outside;
+  margin-left: 2em;
 }
 
-ol li {
-  list-style: decimal inside;
-  padding-left: 3px;
+ol {
+  list-style: decimal outside;
 }
 
 dl dd {
