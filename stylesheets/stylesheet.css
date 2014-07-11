@@ -79,7 +79,6 @@ header h1 {
   color: #fff;
   line-height: 1;
   margin-bottom: 20px;
-  width: 540px;
   padding-top: 20px;
   padding-left: 180px;
   padding-bottom: 20px;
@@ -454,9 +453,6 @@ nav a {
   .inner, nav ul {
     width: 740px;
   }
-  header h1, #slogan {
-    width: 340px;
-  }
   header h1 {
     font-size: 60px;
     background-size: 133px 92px;
@@ -491,9 +487,6 @@ nav a {
   }
   header .inner {
     position: relative;
-  }
-  header h1, #slogan {
-    width: auto;
   }
   header h1 {
     font-size: 48px;
