@@ -580,9 +580,16 @@ nav a {
     /* Hide the second QR code because they are so near to each other */
     display: none;
   }
+  nav {
+      font-size: medium;
+  }
+  nav li {
+      padding: 0 0.5em;
+  }
 }
+
 /* Even mode narrow mobile */
-@media only screen and (max-width: 480px) {
+@media only screen and (max-width: 525px) {
   nav li {
     display: list-item;
     width: 10em;
