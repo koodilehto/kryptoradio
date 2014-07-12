@@ -385,6 +385,11 @@ footer a:hover {
     margin-top: -3em;
 }
 
+#pasila {
+    float: right;
+    margin-left: 2em;
+}
+
 /* MISC */
 .clearfix:after {
   clear: both;
@@ -438,6 +443,24 @@ nav a {
 }
 
 #btc {
+    font-size: smaller;
+}
+
+.cite {
+    font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
+    font-size: larger;
+    font-weight: bold;
+    font-style: italic;
+    margin: 0 auto 1em auto;
+}
+
+.by {
+    margin-top: 0.3em;
+    margin-right: 2em;
+    text-align: right;
+    font-family: 'Helvetica Neue', Helvetica, Arial, serif;
+    display: block;
+    font-weight: normal;
     font-size: smaller;
 }
 
