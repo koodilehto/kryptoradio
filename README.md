@@ -16,10 +16,10 @@ Current version connects to given bitcoin node, is capable of
 requesting transaction and block contents, serializing traffic, and
 logging all network messages to a log directory.
 
-See our [project page](http://bitcoinradio.koodilehto.fi/) for a
+See our [project page](http://kryptoradio.koodilehto.fi/) for a
 longer description.
 
-Email me for more information: <joel.lehtonen+broadcast@iki.fi>
+Email us for more information: <kryptoradio@koodilehto.fi>
 
 ## Compiling
 
@@ -82,7 +82,7 @@ for no licensing costs.
 If you want to donate to the project or co-operate in other ways,
 don't hesitate to contact us. Also, if you are planning to integrate
 bitcoin-broadcast with your project and you need alternative
-licensing, please [contact us](mailto:joel.lehtonen+broadcast@iki.fi).
+licensing, please [contact us](mailto:kryptoradio@koodilehto.fi).
 
 Bitcoin address of this project is [1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5](bitcoin:1FvEggFtNSYS9pcBoYB9wDxH9fa1mrNPW5).
 
