@@ -12,7 +12,7 @@
   </xsl:template>
 
   <!-- Strip extra data -->
-  <xsl:template match="@class|tbody/tr[th]|h1[2]|h3|table|tr[td='Next Block']" />
+  <xsl:template match="@class|tbody/tr[th]|h1|h3|table|tr[td='Next Block']" />
 
   <!-- Strip some extra tags (such as links) but preserve contents -->
   <xsl:template match="a|small|strong|div|comment()">
