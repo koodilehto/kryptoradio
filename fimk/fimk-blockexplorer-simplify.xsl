@@ -12,14 +12,15 @@
   </xsl:template>
 
   <!-- Strip extra data -->
-  <xsl:template match="@class|tbody/tr[th]|h1[2]|h3" />
+  <xsl:template match="@class|tbody/tr[th]|h1[2]|h3|table|tr[td='Next Block']" />
 
   <!-- Strip some extra tags (such as links) but preserve contents -->
   <xsl:template match="a|small|strong|div|comment()">
     <xsl:apply-templates />      
   </xsl:template>
 
-  <xsl:template match="table">
+  <!-- Output non-empty tables -->
+  <xsl:template match="table[tbody/tr]">
     <h2>
       <xsl:choose>
 	<xsl:when test="tbody/tr/th">
