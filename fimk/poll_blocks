@@ -1,0 +1,33 @@
+#!/bin/sh -eu
+
+if test $# -eq 0; then
+    exec >&2
+    echo "Usage: $0 LAST_ID"
+    echo
+    echo "LAST_ID is the previous block id which has been sent already."
+    echo "It is different from block height! In 2014-08-18 it was 132356"
+    exit 1
+fi
+
+LAST_ID=$1
+RAW_HTML=`mktemp`
+TMPDIR=`mktemp -d`
+
+echo "Temporary directory is $TMPDIR"
+
+while true; do
+    LAST_ID=$(( LAST_ID + 1 ))
+    echo -n "Block $LAST_ID"
+
+    while ! curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/blocks/$LAST_ID"; do
+	echo -n .
+	sleep 10
+    done
+
+    echo -n " downloaded"
+    xsltproc -o "$TMPDIR/$LAST_ID.html" --novalid --html \
+	fimk-blockexplorer-simplify.xsl "$RAW_HTML" 2>/dev/null
+    echo " converted"
+done
+
+rm "$RAW_HTML"
