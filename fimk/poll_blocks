@@ -31,8 +31,8 @@ fetch () {
 	# If it fails, then show stderr. Otherwise we mess output
 	# because xsltproc likes to output too much even normally
 	RET=$?
-	cat $RAW_ERR
-	echo "URL was $URL"
+	cat $RAW_ERR >&2
+	echo "URL was $URL" >&2
 	exit $RET
     fi
 }
