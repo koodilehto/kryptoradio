@@ -11,11 +11,12 @@ fi
 
 PREV_ID=$1
 RAW_HTML=`mktemp`
+RAW_OUT=`mktemp`
 
 clean () {
     echo
     echo "Last block was $PREV_ID"
-    rm "$RAW_HTML"
+    rm "$RAW_HTML" "$RAW_OUT"
     exit
 }
 
@@ -25,7 +26,12 @@ while true; do
     echo -n .
 
     curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/"
-    NEXT_ID=`xsltproc --novalid --html --stringparam last_block_url "$PREV_ID" find_new.xsl "$RAW_HTML" 2>/dev/null`
+    xsltproc --novalid --html -o "$RAW_OUT" \
+	--stringparam last_block_url "$PREV_ID" find_new.xsl "$RAW_HTML"
+    
+    exec <"$RAW_OUT"
+    read -r NEXT_ID
+    read -r NEWEST_TX
 
     # Start over if we got nothing
     if test "$NEXT_ID" = ""; then

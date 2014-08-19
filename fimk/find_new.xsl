@@ -16,5 +16,9 @@
       <xsl:value-of select="preceding-sibling::tr[1]/td[1]/a/@href"/>
     </xsl:for-each>
     <xsl:text>&#10;</xsl:text>
+
+    <!-- Output latest transaction ID -->
+    <xsl:value-of select="id('txs')/tbody/tr[2]/td[1]" />
+    <xsl:text>&#10;</xsl:text>
   </xsl:template>
 </xsl:stylesheet>
