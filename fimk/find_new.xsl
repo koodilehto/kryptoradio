@@ -8,7 +8,10 @@
   <xsl:template match="/">
     <!-- If block ID is not found, we're screwed -->
     <xsl:if test="not(id('blocks')/tbody/tr/td[1]/a/@href=$last_block_url)">
-      <xsl:message terminate="yes">Given block is not any of 6 last blocks</xsl:message>
+      <xsl:message terminate="yes">
+	<xsl:text>Given block is not any of 6 last blocks. Try </xsl:text>
+        <xsl:value-of select="id('blocks')/tbody/tr/td[1]/a/@href" />
+      </xsl:message>
     </xsl:if>
 
     <!-- Take the next block ID after the last known -->

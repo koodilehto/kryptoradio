@@ -10,38 +10,62 @@ if test $# -eq 0; then
 fi
 
 PREV_ID=$1
+LAST_SENT_TX=
 RAW_HTML=`mktemp`
 RAW_OUT=`mktemp`
+RAW_ERR=`mktemp`
 
 clean () {
-    echo
-    echo "Last block was $PREV_ID"
-    rm "$RAW_HTML" "$RAW_OUT"
+    echo "\nLast block was $PREV_ID" >&2
+    rm "$RAW_HTML" "$RAW_OUT" "$RAW_ERR"
     exit
+}
+
+fetch () {
+    URL="$1"
+    XSL="$2"
+    shift 2
+
+    curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$URL" 
+    if ! xsltproc --novalid --html -o "$RAW_OUT" "$@" "$XSL" "$RAW_HTML" 2>$RAW_ERR; then
+	# If it fails, then show stderr. Otherwise we mess output
+	# because xsltproc likes to output too much even normally
+	RET=$?
+	cat $RAW_ERR
+	echo "URL was $URL"
+	exit $RET
+    fi
 }
 
 trap clean EXIT INT
 
 while true; do
-    echo -n .
+    echo -n . >&2
 
-    curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/"
-    xsltproc --novalid --html -o "$RAW_OUT" \
-	--stringparam last_block_url "$PREV_ID" find_new.xsl "$RAW_HTML"
+    fetch "" find_new.xsl --stringparam last_block_url "$PREV_ID"
     
     exec <"$RAW_OUT"
     read -r NEXT_ID
     read -r NEWEST_TX
+
+    # Decide if we should send transactions
+    if test "$LAST_SENT_TX" -a "$LAST_SENT_TX" != "$NEWEST_TX"; then
+	echo " found new transactions" >&2
+	fetch transactions transactions.xsl --stringparam last_tx "$LAST_SENT_TX"
+	cat "$RAW_OUT"
+    fi
+
+    LAST_SENT_TX=$NEWEST_TX
 
     # Start over if we got nothing
     if test "$NEXT_ID" = ""; then
     	sleep 10
     	continue
     else
-	echo " found $NEXT_ID"
+	echo " found $NEXT_ID" >&2
     	PREV_ID="$NEXT_ID"
     fi
 
-    curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$NEXT_ID"
-    xsltproc --novalid --html fimk-blockexplorer-simplify.xsl "$RAW_HTML" 2>/dev/null
+    fetch "$NEXT_ID" fimk-blockexplorer-simplify.xsl
+    cat "$RAW_OUT"
 done

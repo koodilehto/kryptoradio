@@ -1,37 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Simplifies FIMK blockexplorer HTML to consume less bandwidth -->
+<!-- Simplifies FIMK blockexplorer transaction list -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   <xsl:output method="html" omit-xml-declaration="yes" indent="no" />
   <xsl:strip-space elements="*" />
+  <xsl:param name="last_tx"/>
 
   <!-- Start from the payload, skip headers -->
   <xsl:template match="/">
-    <h1>Block</h1>
-    <xsl:for-each select="/html/body/div[@class='container']">
+    <xsl:for-each select="//table">
+      <h1>Transactions</h1>
+      <table>
 	<xsl:apply-templates />
+      </table>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="tbody">
+    <xsl:for-each select="tr[td[2]/a=$last_tx]">
+      <xsl:apply-templates select="preceding-sibling::tr"/>
     </xsl:for-each>
   </xsl:template>
 
   <!-- Strip extra data -->
-  <xsl:template match="@class|tbody/tr[th]|h1|h3|table|tr[td='Next Block']" />
+  <xsl:template match="@class|comment()" />
 
   <!-- Strip some extra tags (such as links) but preserve contents -->
-  <xsl:template match="a|small|strong|div|comment()">
+  <xsl:template match="a">
     <xsl:apply-templates />      
-  </xsl:template>
-
-  <!-- Output non-empty tables -->
-  <xsl:template match="table[tbody/tr]">
-    <h2>
-      <xsl:choose>
-	<xsl:when test="tbody/tr/th">
-	  <xsl:value-of select="tbody/tr/th" />
-	</xsl:when>
-	<xsl:otherwise>Transactions</xsl:otherwise>
-      </xsl:choose>
-    </h2>
-
-    <table><xsl:apply-templates /></table>
   </xsl:template>
 
   <!-- Keep the rest -->
