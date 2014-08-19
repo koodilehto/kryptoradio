@@ -12,6 +12,15 @@ fi
 PREV_ID=$1
 RAW_HTML=`mktemp`
 
+clean () {
+    echo
+    echo "Last block was $PREV_ID"
+    rm "$RAW_HTML"
+    exit
+}
+
+trap clean EXIT INT
+
 while true; do
     echo -n .
 
@@ -30,5 +39,3 @@ while true; do
     curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$NEXT_ID"
     xsltproc --novalid --html fimk-blockexplorer-simplify.xsl "$RAW_HTML" 2>/dev/null
 done
-
-rm "$RAW_HTML"
