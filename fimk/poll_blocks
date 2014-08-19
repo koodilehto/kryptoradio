@@ -2,32 +2,33 @@
 
 if test $# -eq 0; then
     exec >&2
-    echo "Usage: $0 LAST_ID"
+    echo "Usage: $0 PREV_ID"
     echo
-    echo "LAST_ID is the previous block id which has been sent already."
-    echo "It is different from block height! In 2014-08-18 it was 132356"
+    echo "PREV_ID is the previous block id url which has been sent already."
+    echo "It is different from block height! In 2014-08-19 it was /blocks/133739"
     exit 1
 fi
 
-LAST_ID=$1
+PREV_ID=$1
 RAW_HTML=`mktemp`
-TMPDIR=`mktemp -d`
-
-echo "Temporary directory is $TMPDIR"
 
 while true; do
-    LAST_ID=$(( LAST_ID + 1 ))
-    echo -n "Block $LAST_ID"
+    echo -n .
 
-    while ! curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/blocks/$LAST_ID"; do
-	echo -n .
-	sleep 10
-    done
+    curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/"
+    NEXT_ID=`xsltproc --novalid --html --stringparam last_block_url "$PREV_ID" find_new.xsl "$RAW_HTML" 2>/dev/null`
 
-    echo -n " downloaded"
-    xsltproc -o "$TMPDIR/$LAST_ID.html" --novalid --html \
-	fimk-blockexplorer-simplify.xsl "$RAW_HTML" 2>/dev/null
-    echo " converted"
+    # Start over if we got nothing
+    if test "$NEXT_ID" = ""; then
+    	sleep 10
+    	continue
+    else
+	echo " found $NEXT_ID"
+    	PREV_ID="$NEXT_ID"
+    fi
+
+    curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$NEXT_ID"
+    xsltproc --novalid --html fimk-blockexplorer-simplify.xsl "$RAW_HTML" 2>/dev/null
 done
 
 rm "$RAW_HTML"
