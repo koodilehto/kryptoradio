@@ -16,35 +16,35 @@ RAW_OUT=`mktemp`
 RAW_ERR=`mktemp`
 
 clean () {
-    echo "\nLast block was $PREV_ID" >&2
-    rm "$RAW_HTML" "$RAW_OUT" "$RAW_ERR"
+    exec >&2
+    echo
+    echo "Last fetched block was $PREV_ID"
+    echo "HTML:        $RAW_HTML"
+    echo "XSLT output: $RAW_OUT"
+    echo "XSLT error:  $RAW_ERR"
     exit
 }
 
 fetch_once () {
+    truncate -s 0 "$RAW_HTML" "$RAW_OUT" "$RAW_ERR"
+
     URL="$1"
     XSL="$2"
     shift 2
 
     curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$URL" 
-    if ! xsltproc --novalid --html -o "$RAW_OUT" "$@" "$XSL" "$RAW_HTML" 2>$RAW_ERR; then
-	# If it fails, then show stderr. Otherwise we mess output
-	# because xsltproc likes to output too much even normally
-	RET=$?
-	cat $RAW_ERR >&2
-	echo "URL was $URL" >&2
-	exit $RET
-    fi
+    xsltproc --novalid --html -o "$RAW_OUT" "$@" "$XSL" "$RAW_HTML" 2>$RAW_ERR
 }
 
 fetch () {
     for I in 1 2 3; do
-	if ! fetch_once "$@"; then
-	    break
+	if fetch_once "$@"; then
+	    return
 	fi
 	echo -n '!' >&2
 	sleep 10
     done
+    false
 }
 
 trap clean EXIT INT
