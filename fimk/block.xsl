@@ -15,7 +15,7 @@
   </xsl:template>
 
   <!-- Strip extra data -->
-  <xsl:template match="@class|tbody/tr[th]|h1|h3|table|tr[td='Next Block']|tr[td='Number Of Transactions']|tr[td='Total Amount']|tr[td='Total Fees']|tr[td='Previous Block' and ../tr/th='Summary']" />
+  <xsl:template match="@class|tbody/tr[th]|h1|h3|table|tr[td='Next Block']|tr[td='Number Of Transactions']|tr[td='Total Amount']|tr[td='Total Fees']|tr[td='Previous Block' and ../tr/th='Summary']|tr[td[1]='Payload Size' and td[2]='0 Bytes']|tr[td[1]='Payload' and td[2]='e3b0c44298fc1c149afbf4c8996...']" />
 
   <!-- Strip some extra tags (such as links) but preserve contents -->
   <xsl:template match="a|small|strong|div|comment()|tbody">
