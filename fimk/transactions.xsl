@@ -8,7 +8,7 @@
   <!-- Start from the payload, skip headers -->
   <xsl:template match="/">
     <xsl:for-each select="//table">
-      <h1>Transactions</h1>
+      <h1>Tx</h1>
       <table>
 	<xsl:apply-templates />
       </table>

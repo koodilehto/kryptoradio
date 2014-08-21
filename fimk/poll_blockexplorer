@@ -1,15 +1,6 @@
 #!/bin/sh -eu
 
-if test $# -eq 0; then
-    exec >&2
-    echo "Usage: $0 PREV_ID"
-    echo
-    echo "PREV_ID is the previous block id url which has been sent already."
-    echo "It is different from block height! In 2014-08-19 it was /blocks/133739"
-    exit 1
-fi
-
-PREV_ID=$1
+PREV_ID=/blocks/1
 LAST_SENT_TX=
 RAW_HTML=`mktemp`
 RAW_OUT=`mktemp`
@@ -76,6 +67,6 @@ while true; do
     	PREV_ID="$NEXT_ID"
     fi
 
-    fetch "$NEXT_ID" fimk-blockexplorer-simplify.xsl
+    fetch "$NEXT_ID" block.xsl
     cat "$RAW_OUT"
 done
