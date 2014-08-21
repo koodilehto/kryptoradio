@@ -22,8 +22,8 @@
     <xsl:apply-templates />      
   </xsl:template>
 
-  <!-- Strip extra "Bytes" from byte counter -->
-  <xsl:template match="td[preceding-sibling::td = 'Payload Size']">
+  <!-- Strip extra "Bytes" from byte counter and numeric address from generator -->
+  <xsl:template match="td[preceding-sibling::td = 'Payload Size' or preceding-sibling::td = 'Generator']">
     <td><xsl:value-of select="substring-before(.,' ')" /></td>
   </xsl:template>
 
