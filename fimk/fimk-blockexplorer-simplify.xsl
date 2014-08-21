@@ -27,6 +27,11 @@
     <td><xsl:value-of select="substring-before(.,' ')" /></td>
   </xsl:template>
 
+  <!-- Strip extra dots from hashes -->
+  <xsl:template match="td[position() = 2 and ../../tr/th='Hashes']">
+    <td><xsl:value-of select="substring-before(.,'...')" /></td>
+  </xsl:template>
+
   <!-- Compact two separate tables for summary and hashes into one -->
   <xsl:template match="table[tbody/tr/th]">
     <xsl:apply-templates select="tbody" />
