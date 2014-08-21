@@ -43,7 +43,7 @@
       <td>Transactions</td>
       <td><ul>
 	<xsl:for-each select="tbody/tr">
-	  <li><xsl:apply-templates select="td[2]"/></li>
+	  <li><xsl:value-of select="td[2]"/></li>
 	</xsl:for-each>
       </ul></td>
     </tr>
