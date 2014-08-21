@@ -27,16 +27,22 @@
 
   <!-- Output non-empty tables -->
   <xsl:template match="table[tbody/tr]">
-    <h2>
-      <xsl:choose>
-	<xsl:when test="tbody/tr/th">
-	  <xsl:value-of select="tbody/tr/th" />
-	</xsl:when>
-	<xsl:otherwise>Transactions</xsl:otherwise>
-      </xsl:choose>
-    </h2>
-
-    <table><xsl:apply-templates /></table>
+    <xsl:choose>
+      <xsl:when test="tbody/tr/th">
+	<!-- Slice header off from the table -->
+	<h2><xsl:value-of select="tbody/tr/th" /></h2>
+	<table><xsl:apply-templates /></table>
+      </xsl:when>
+      <xsl:otherwise>
+	<!-- Output only transaction IDs -->
+	<h2>Transactions</h2>
+	<ul>
+	  <xsl:for-each select="tbody/tr">
+	    <li><xsl:apply-templates select="td[2]"/></li>
+	  </xsl:for-each>
+	</ul>
+	</xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
   <!-- Keep the rest -->
