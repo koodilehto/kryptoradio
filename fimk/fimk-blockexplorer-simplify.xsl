@@ -13,11 +13,16 @@
   </xsl:template>
 
   <!-- Strip extra data -->
-  <xsl:template match="@class|tbody/tr[th]|h1|h3|table|tr[td='Next Block']" />
+  <xsl:template match="@class|tbody/tr[th]|h1|h3|table|tr[td='Next Block']|tr[td='Number Of Transactions']|tr[td='Total Amount']|tr[td='Total Fees']|tr[td='Previous Block' and ../tr/th='Summary']" />
 
   <!-- Strip some extra tags (such as links) but preserve contents -->
   <xsl:template match="a|small|strong|div|comment()">
     <xsl:apply-templates />      
+  </xsl:template>
+
+  <!-- Strip extra "Bytes" from byte counter -->
+  <xsl:template match="td[preceding-sibling::td = 'Payload Size']">
+    <td><xsl:value-of select="substring-before(.,' ')" /></td>
   </xsl:template>
 
   <!-- Output non-empty tables -->
