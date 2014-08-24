@@ -9,8 +9,7 @@ import Data.Text (Text)
 import Data.Aeson
 import Data.Aeson.Types
 import Pusher
-
-data Entry = Bid | Ask | Trade deriving (Show)
+import Exchange
 
 -- |Subscriptions to Bitstamp live order book and trade stream
 subs :: [Text]
@@ -31,8 +30,8 @@ extract Pusher{..} = case (event,channel) of
     tradeParser (Object o) = do
       price <- o .: "price"
       amount <- o .: "amount"
-      return [((Trade,price),amount)]
-    conv entry (pos,amount) = ((entry,read pos),read amount)
+      return [(Key Trade price "USD" "bitstamp",amount)]
+    conv entry (price,amount) = (Key entry (read price) "USD" "bitstamp",read amount)
 
-bitstamp :: IO (TChan [((Entry,Double),Double)])
+bitstamp :: IO (TChan [Entry])
 bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs extract
