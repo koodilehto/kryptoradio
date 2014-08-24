@@ -18,6 +18,8 @@ data Pusher = Pusher { event   :: Text
                      , channel :: Text
                      } deriving (Show)
 
+type Conv a = (Pusher -> Maybe a)
+
 instance FromJSON Pusher where
   parseJSON (Object v) = Pusher <$>
                          v .: "event" <*>
@@ -25,16 +27,18 @@ instance FromJSON Pusher where
                          v .:? "channel" .!= ""
   parseJSON _ = mzero
 
-app :: TChan Pusher -> [ByteString] -> ClientApp ()
-app chan subs conn = do
+app :: TChan a -> [ByteString] -> Conv a -> ClientApp ()
+app chan subs f conn = do
   -- Subscribe to Pusher channels
   mapM_ (sendTextData conn) subs
   -- Do actions
   forever $ do
     msg <- receiveData conn
-    atomically $ writeTChan chan $ case eitherDecode' msg of
-      Left e -> error e
-      Right a -> a
+    case eitherDecode' msg of
+      Left e  -> atomically $ writeTChan chan $ error e
+      Right a -> case f a of
+        Nothing -> return ()
+        Just x  -> atomically $ writeTChan chan x
 
 -- |Pass the grenade to the channel
 rethrow :: TChan a -> Either SomeException b -> IO ()
@@ -42,11 +46,11 @@ rethrow ch x = atomically $ writeTChan ch $ case x of
   Right _ -> error "Web socket closed"
   Left e  -> throw e
 
-connectPusher :: String -> Int -> String -> [Text] -> IO (TChan Pusher)
-connectPusher host port appKey chans = do
+connectPusher :: String -> Int -> String -> [Text] -> Conv a -> IO (TChan a)
+connectPusher host port appKey chans f = do
   chan <- newTChanIO
   forkFinally
-    (runClient host port path $ app chan subs)
+    (runClient host port path $ app chan subs f)
     (rethrow chan)
   return chan
   where subs = map channelToSubs chans

@@ -11,4 +11,4 @@ subs :: [Text]
 subs = ["diff_order_book","live_trades"]
 
 bitstamp :: IO (TChan Pusher)
-bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs
+bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs Just
