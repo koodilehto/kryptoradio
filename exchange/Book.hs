@@ -7,6 +7,7 @@ import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad.STM
 import Control.Monad (forever)
+import Data.List (intercalate)
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Bitstamp
@@ -20,7 +21,7 @@ main = do
   where loop book old = do
           getLine
           new <- readTVarIO book
-          print $ bookDiff old new
+          putStrLn $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
           loop book new
 
 orderbook :: TChan [Entry] -> TVar (Map Key Double) -> IO ()
@@ -49,3 +50,6 @@ bookDiff = M.mergeWithKey common onlyInOld onlyInNew
     onlyInOld = M.map (const 0)
     -- Keep new trades and orders if present only in new
     onlyInNew = id
+
+pairToCsv (Key{..},amount) =
+  intercalate "," [show kind,show price,show amount,currency,exchange]
