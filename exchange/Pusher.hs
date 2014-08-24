@@ -44,11 +44,13 @@ rethrow ch x = atomically $ writeTChan ch $ case x of
 
 connectPusher :: String -> Int -> String -> [Text] -> IO (TChan Pusher)
 connectPusher host port appKey chans = do
-  print subs
   chan <- newTChanIO
-  forkFinally (runClient host port ("/app/" ++ appKey ++ "?protocol=7") $ app chan subs) (rethrow chan)
+  forkFinally
+    (runClient host port path $ app chan subs)
+    (rethrow chan)
   return chan
   where subs = map channelToSubs chans
+        path = "/app/" ++ appKey ++ "?protocol=7"
 
 channelToSubs :: Text -> ByteString
 channelToSubs chan =
