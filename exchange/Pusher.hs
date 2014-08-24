@@ -9,7 +9,7 @@ import Control.Exception.Base (SomeException,throw)
 import Control.Monad (forever,mzero)
 import Control.Monad.STM
 import Data.Aeson
-import Data.ByteString (ByteString)
+import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
 import Network.WebSockets (ClientApp,Connection,sendTextData,runClient,receiveData)
 
@@ -42,8 +42,16 @@ rethrow ch x = atomically $ writeTChan ch $ case x of
   Right _ -> error "Web socket closed"
   Left e  -> throw e
 
-connectPusher :: String -> Int -> String -> [ByteString] -> IO (TChan Pusher)
-connectPusher host port appKey subs = do
+connectPusher :: String -> Int -> String -> [Text] -> IO (TChan Pusher)
+connectPusher host port appKey chans = do
+  print subs
   chan <- newTChanIO
   forkFinally (runClient host port ("/app/" ++ appKey ++ "?protocol=7") $ app chan subs) (rethrow chan)
   return chan
+  where subs = map channelToSubs chans
+
+channelToSubs :: Text -> ByteString
+channelToSubs chan =
+  encode $ object ["event" .= String "pusher:subscribe"
+                  ,"data"  .= object ["channel" .= chan]
+                  ]
