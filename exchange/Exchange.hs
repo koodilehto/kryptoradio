@@ -1,7 +1,7 @@
 -- |Common functions between exchanges
 module Exchange where
 
-data Kind = Bid | Ask | Trade deriving (Show,Ord,Eq)
+data Kind = Bid | Trade | Ask deriving (Show,Ord,Eq)
 
 data Key = Key { kind     :: Kind
                , price    :: Double -- TODO change to scientific

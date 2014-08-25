@@ -21,7 +21,7 @@ main = do
   where loop book old = do
           getLine
           new <- readTVarIO book
-          putStrLn $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
+          putStr $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
           loop book new
 
 orderbook :: TChan [Entry] -> TVar (Map Key Double) -> IO ()
@@ -52,4 +52,9 @@ bookDiff = M.mergeWithKey common onlyInOld onlyInNew
     onlyInNew = id
 
 pairToCsv (Key{..},amount) =
-  intercalate "," [show kind,show price,show amount,currency,exchange]
+  intercalate "," $ [exchange,currency,kindStr,show price] ++ amountStr
+  where amountStr = if amount == 0 then [] else [show amount]
+        kindStr = case kind of
+          Bid   -> "B"
+          Ask   -> "A"
+          Trade -> "T"
