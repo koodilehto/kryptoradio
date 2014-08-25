@@ -12,6 +12,7 @@ import Data.List (intercalate)
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Bitstamp
+import BitPay
 import Exchange
 
 -- |Do something if a thread dies.
@@ -24,6 +25,7 @@ main = do
   -- safefork makes sure that the exception is listened on the main loop
   let safeFork a = forkFinally a $ bomb $ atomically.writeTVar book
   safeFork $ bitstamp ch
+  safeFork $ bitpay ch
   safeFork $ orderbook ch book
   loop book M.empty
   where loop book old = do
