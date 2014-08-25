@@ -30,10 +30,19 @@ main = do
   loop book M.empty
   where loop book old = do
           waitNew book old
-          getLine
-          new <- readTVarIO book
-          putStr $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
-          loop book new
+          c <- getChar
+          putStr "\r"
+          case c of
+            'f'  -> do
+              putStrLn "Next will be full flush"
+              loop book $ fullFlush old
+            '\n' -> do
+              new <- readTVarIO book
+              putStr $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
+              loop book new
+            _ -> do
+              putStrLn "Unknown command"
+              loop book old
 
 orderbook :: TChan [Entry] -> TVar (Map Key Double) -> IO ()
 orderbook ch book = forever $ atomically $ do
@@ -60,6 +69,12 @@ bookDiff = M.mergeWithKey common onlyInOld onlyInNew
     onlyInOld = M.map (const 0)
     -- Keep new trades and orders if present only in new
     onlyInNew = id
+
+fullFlush :: Map Key a -> Map Key a
+fullFlush = M.filterWithKey f
+  where f Key{..} value = case kind of
+          Trade -> True  -- Keep trades
+          _     -> False -- Remove bids, asks, and rates
 
 pairToCsv (Key{..},amount) =
   intercalate "," $ case (kind,amount) of
