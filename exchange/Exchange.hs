@@ -1,10 +1,10 @@
 -- |Common functions between exchanges
 module Exchange where
 
-data Kind = Bid | Trade | Ask deriving (Show,Ord,Eq)
+data Kind = Bid | Trade | Ask | Rate deriving (Show,Ord,Eq)
 
 data Key = Key { kind     :: Kind
-               , price    :: Double -- TODO change to scientific
+               , price    :: Double -- Zero of kind is Rate. TODO change to scientific
                , currency :: String
                , exchange :: String
                } deriving (Show,Ord,Eq)

@@ -41,8 +41,7 @@ orderbook ch book = forever $ atomically $ do
           (Trade,_) -> M.insertWith (+) key value
           (Bid,0)   -> M.delete key
           (Ask,0)   -> M.delete key
-          (Bid,_)   -> M.insert key value
-          (Ask,_)   -> M.insert key value
+          _         -> M.insert key value
 
 bookDiff :: Map Key Double -> Map Key Double -> Map Key Double
 bookDiff = M.mergeWithKey common onlyInOld onlyInNew
@@ -51,7 +50,7 @@ bookDiff = M.mergeWithKey common onlyInOld onlyInNew
     common Key{..} a b = case (kind,a==b) of
       (_,True)  -> Nothing    -- No changes, not interesting
       (Trade,_) -> Just (b-a) -- In cases of trades, send change
-      (_,_)     -> Just b     -- In cases of bid and ask, use newer value
+      (_,_)     -> Just b     -- In cases of bid, ask, and rate: use newer value
     -- If a value is absent from new, it is a sign that bid/ask is
     -- removed. Then we give a value of zero. Trades are never removed
     -- so they are not checked.
@@ -60,9 +59,11 @@ bookDiff = M.mergeWithKey common onlyInOld onlyInNew
     onlyInNew = id
 
 pairToCsv (Key{..},amount) =
-  intercalate "," $ [exchange,currency,kindStr,show price] ++ amountStr
-  where amountStr = if amount == 0 then [] else [show amount]
-        kindStr = case kind of
+  intercalate "," $ case (kind,amount) of
+    (Rate,_) -> [exchange,currency,"R",show amount]
+    (_,0)    -> [exchange,currency,kindStr,show price]
+    _        -> [exchange,currency,kindStr,show price,show amount]
+  where kindStr = case kind of
           Bid   -> "B"
           Ask   -> "A"
           Trade -> "T"
