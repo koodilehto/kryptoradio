@@ -33,5 +33,5 @@ extract Pusher{..} = case (event,channel) of
       return [(Key Trade price "USD" "BITSTAMP",amount)]
     conv entry (price,amount) = (Key entry (read price) "USD" "BITSTAMP",read amount)
 
-bitstamp :: IO (TChan [Entry])
+bitstamp :: TChan [Entry] -> IO ()
 bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs extract

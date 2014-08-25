@@ -2,7 +2,8 @@
 -- |Order book and trade history tools
 module Book where
 
-import Control.Concurrent (forkIO)
+import Control.Exception
+import Control.Concurrent (forkFinally)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad.STM
@@ -13,10 +14,17 @@ import qualified Data.Map.Lazy as M
 import Bitstamp
 import Exchange
 
+-- |Do something if a thread dies.
+bomb :: (a -> c) -> Either SomeException b -> c
+bomb act = act . either throw (const $ error "Thread died")
+
 main = do
-  ch <- bitstamp
+  ch <- newTChanIO
   book <- newTVarIO M.empty
-  forkIO $ orderbook ch book
+  -- safefork makes sure that the exception is listened on the main loop
+  let safeFork a = forkFinally a $ bomb $ atomically.writeTVar book
+  safeFork $ bitstamp ch
+  safeFork $ orderbook ch book
   loop book M.empty
   where loop book old = do
           getLine

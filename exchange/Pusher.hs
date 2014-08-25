@@ -3,9 +3,7 @@
 module Pusher (Pusher(..),connectPusher) where
 
 import Control.Applicative
-import Control.Concurrent (forkFinally)
 import Control.Concurrent.STM.TChan
-import Control.Exception.Base (SomeException,throw)
 import Control.Monad (forever,mzero)
 import Control.Monad.STM
 import Data.Aeson
@@ -40,19 +38,9 @@ app chan subs f conn = do
         Nothing -> return ()
         Just x  -> atomically $ writeTChan chan x
 
--- |Pass the grenade to the channel
-rethrow :: TChan a -> Either SomeException b -> IO ()
-rethrow ch x = atomically $ writeTChan ch $ case x of
-  Right _ -> error "Web socket closed"
-  Left e  -> throw e
-
-connectPusher :: String -> Int -> String -> [Text] -> Conv a -> IO (TChan a)
-connectPusher host port appKey chans f = do
-  chan <- newTChanIO
-  forkFinally
-    (runClient host port path $ app chan subs f)
-    (rethrow chan)
-  return chan
+connectPusher :: String -> Int -> String -> [Text] -> Conv a -> TChan a -> IO ()
+connectPusher host port appKey chans f chan = do
+  runClient host port path $ app chan subs f
   where subs = map channelToSubs chans
         path = "/app/" ++ appKey ++ "?protocol=7"
 
