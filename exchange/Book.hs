@@ -29,6 +29,7 @@ main = do
   safeFork $ orderbook ch book
   loop book M.empty
   where loop book old = do
+          waitNew book old
           getLine
           new <- readTVarIO book
           putStr $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
@@ -52,7 +53,7 @@ bookDiff = M.mergeWithKey common onlyInOld onlyInNew
     common Key{..} a b = case (kind,a==b) of
       (_,True)  -> Nothing    -- No changes, not interesting
       (Trade,_) -> Just (b-a) -- In cases of trades, send change
-      (_,_)     -> Just b     -- In cases of bid, ask, and rate: use newer value
+      _         -> Just b     -- In cases of bid, ask, and rate: use newer value
     -- If a value is absent from new, it is a sign that bid/ask is
     -- removed. Then we give a value of zero. Trades are never removed
     -- so they are not checked.
@@ -69,3 +70,11 @@ pairToCsv (Key{..},amount) =
           Bid   -> "B"
           Ask   -> "A"
           Trade -> "T"
+
+waitNew :: Eq a => TVar a -> a -> IO ()
+waitNew var old = do
+  atomically $ do
+    new <- readTVar var
+    check $ old /= new
+  putStrLn "New data available"
+  
