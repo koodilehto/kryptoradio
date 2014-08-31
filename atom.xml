@@ -21,8 +21,8 @@ layout: nil
     <title>{{ post.title }}</title>
     <updated>{{ post.date | date_to_xmlschema }}</updated>
     <author>
-      <name>Geek Collision</name>
-      <uri>http://www.geekcollision.org/</uri>
+      <name>Kryptoradio</name>
+      <uri>http://kryptoradio.koodilehto.fi/</uri>
     </author>
     <content type="html">{{ post.content | xml_escape }}</content>
   </entry>
