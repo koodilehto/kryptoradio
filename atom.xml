@@ -11,7 +11,7 @@ layout: nil
   <id>http://www.kryptorad.io/</id>
   <author>
     <name>Kryptoradio</name>
-    <email>TODO</email>
+    <email>kryptoradio@koodilehto.fi</email>
   </author>
 
   {% for post in site.posts %}
