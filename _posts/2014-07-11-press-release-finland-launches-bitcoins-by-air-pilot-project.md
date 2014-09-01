@@ -1,45 +1,45 @@
 ---
-layout: layout
+layout: post
+title: "Press release: Finland launches bitcoins by air pilot project"
+description: ""
+category: press
+tags: []
 ---
 
-<h2 id="general">Finland launches bitcoins-by-air pilot project</h2>
-
-<p><em>Hold for release until 2014-07-11 07:00 UTC</em></p>
-
-<p>Finnish quasi-national cryptocurrency FIMKrypto has struck a
+Finnish quasi-national cryptocurrency FIMKrypto has struck a
 partnership deal with Koodilehto, a Finnish software company, in order
 to launch world’s first development project that aims to broadcast
 cryptocurrency transactions through national TV broadcast networks in
-real time.</p>
+real time.
 
-<p>The technology, coined Kryptoradio, enables merchants and consumers to
+The technology, coined Kryptoradio, enables merchants and consumers to
 receive real time P2P network transaction data with any standard
 Digital TV device and custom software without the requirement of
-Internet or mobile network connection.</p>
+Internet or mobile network connection.
 
-<p>The broadcast transaction data consists of Bitcoin and FIMKrypto
+The broadcast transaction data consists of Bitcoin and FIMKrypto
 transactions, which are encoded and forwarded to the network of
 Digita, the Finnish national terrestrial TV operator. The broadcast
 covers 95% of the Finnish territory of approximately 5 million
 people. The technology, once completed, will be portable to other
-countries worldwide.</p>
+countries worldwide.
 
-<p>The pilot broadcast project starting in September 1 lasts two months,
+The pilot broadcast project starting in September 1 lasts two months,
 and commercial production phase is planned to begin later this
 year. The pilot is free-to-air and open for everyone interested in
-developing devices and applications.</p>
+developing devices and applications.
 
-<p>FIMKrypto (FIMK) is a cryptocurrency launched in early July by
+FIMKrypto (FIMK) is a cryptocurrency launched in early July by
 non-profit association Krypto FIN ry. Prior to FIMK’s launch the
 association received 533 Bitcoins (approx. 250 000 EUR) in donations
 from domestic and international donors. The association coordinates
 the FIMKrypto project and organizes a national basic income plan paid
-in the cryptocurrency.</p>
+in the cryptocurrency.
 
-<h3 id="contact">Contact info</h3>
+#### Contact info
 
-<ul>
-<li>Krypto FIN ry, Svante Lehtinen, info@fimk.fi</li>
-<li>Koodilehto co-op, Joel Lehtonen, joel.lehtonen@koodilehto.fi +358 40 685 1884</li>
-<li>Web site: http://kryptoradio.koodilehto.fi/</li>
-</ul>
+* Krypto FIN ry, Svante Lehtinen, info@fimk.fi
+* Koodilehto co-op, Joel Lehtonen, joel.lehtonen@koodilehto.fi +358 40 685 1884
+* Web site: http://kryptoradio.koodilehto.fi/
+
+
