@@ -5,7 +5,7 @@ layout: layout
 <h2 id="general">News</h2>
 
 {% for post in site.posts %}
-    <h3>{{ post.title }}</h3>
+    <h3><a href="{{ post.url }}" title="See full posting">{{ post.title }}</a></h3>
     <div class="date">{{ post.date | date_to_string }}</div>
     {{ post.content }}
 {% endfor %}

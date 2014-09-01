@@ -470,6 +470,11 @@ nav a {
     font-size: smaller;
 }
 
+.date {
+    margin-bottom: 1em;
+    font-weight: bold;
+}
+
 /* #Media Queries
 ================================================== */
 
