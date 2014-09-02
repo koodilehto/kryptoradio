@@ -1,0 +1,4 @@
+#!/bin/sh -eu
+
+sudo apt-get install dvb-apps dvbsnoop w-scan
+w_scan -c FI -M >kryptoradio_channels.conf

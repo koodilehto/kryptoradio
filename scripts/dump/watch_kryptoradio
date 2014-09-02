@@ -1,0 +1,3 @@
+#!/bin/sh
+
+dvbsnoop -s pes 0x1FA5

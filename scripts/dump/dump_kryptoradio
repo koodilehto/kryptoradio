@@ -1,0 +1,4 @@
+#!/bin/sh
+
+NOW=$(date +"%d_%m_%Y_%H_%I_%S")
+dvbsnoop -s ts -b 0x1FA5 > kryptoradio-dump-$NOW.ts

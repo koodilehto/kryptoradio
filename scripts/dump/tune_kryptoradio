@@ -1,0 +1,3 @@
+#!/bin/sh
+
+tzap -c kryptoradio_channels.conf Kutonen
