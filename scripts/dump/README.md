@@ -16,7 +16,7 @@ If you already have a DVB-T adapter, it's probably supported already. If you don
 If you are not certain if you have a antenna TV (DVB-T) or if you are not sure about signal quality, here's a quick check:
 
 1. Connect your TV to the antenna you're planning to use for receiving Kryptoradio
-1. Verify that you are **unable** to view channel *Taivas TV7*. If you do, you are screwed. And your antenna system is DVB-C.
+1. Verify that you are **unable** to view channel *Taivas TV7*. If you can see it, you are screwed. And your antenna system is DVB-C.
 1. Verify that you can view channel number 11, *Kutonen*.
 
 ## Installation
