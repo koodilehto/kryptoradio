@@ -17,7 +17,7 @@ If you are not certain if you have a antenna TV (DVB-T) or if you are not sure a
 
 1. Connect your TV to the antenna you're planning to use for receiving Kryptoradio
 1. Verify that you are **unable** to view channel *Taivas TV7*. If you can see it, you are screwed. And your antenna system is DVB-C.
-1. Verify that you can view channel number 11, *Kutonen*.
+1. Verify that you can view channel number 9, *Jim*.
 
 ## Installation
 
