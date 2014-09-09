@@ -4,13 +4,19 @@ module Resources where
 import Data.ByteString.Lazy.Char8 (ByteString,pack)
 import Data.Text (Text,unpack)
 import Data.Word
+import Control.Concurrent.STM.TMVar
+import Data.Functor
+
+type RawResource = TMVar ByteString -> Resource
 
 data Resource = Resource { rid      :: Word8
                          , name     :: Text
                          , priority :: Word8
                          , desc     :: Text
-                         } deriving (Show)
+                         , var      :: TMVar ByteString
+                         }
 
+resources :: [RawResource]
 resources = [Resource 0 "control" 0 "Kryptoradio control channel"
             ,Resource 1 "bitcoin" 2 "Bitoin packet (transactions and blocks)"
             ,Resource 2 "exchange" 4 "Currency exchange data (Bitstamp and Bitpay) including order book"
@@ -18,6 +24,10 @@ resources = [Resource 0 "control" 0 "Kryptoradio control channel"
             ,Resource 4 "qsl" 5 "QSL verification codes"
             ,Resource 5 "irc" 6 "Internet Relay Chat (subscribed channels only)"
             ]
+
+-- |Create transactional variables from raw resource text.
+newResources :: [RawResource] -> IO [Resource]
+newResources = mapM (<$> newEmptyTMVarIO)
 
 describe :: Resource -> ByteString
 describe Resource{..} = pack $
