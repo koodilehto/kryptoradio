@@ -4,6 +4,7 @@ module Broadcaster where
 import Control.Monad (unless)
 import Control.Monad.STM
 import Control.Monad.IO.Class
+import Control.Concurrent (forkIO)
 import Control.Concurrent.STM.TMVar
 import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as B
@@ -16,10 +17,12 @@ import Network.HTTP.Types (ok200,badRequest400)
 import Network.Wai
 import Network.Wai.Handler.Warp (run)
 import Resources
+import Serialization
 
 main = do
   let port = 3000
   res <- newResources resources
+  forkIO $ serializator $ atomically $ priorityTake res
   putStrLn $ "Listening on port " ++ show port
   run port $ app res
  
