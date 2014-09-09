@@ -18,24 +18,25 @@ main = do
   run port $ app resources
  
 app :: [Resource] -> Application
-app res req = case (requestMethod req,pathInfo req) of
-  ("GET",[])         -> good $ describeAll resources
-  ("GET",[name])     -> good $ describe $ findResource name
-  ("PUT",[name])     -> good $ "TODO " ++ show name ++ "\n"
-  ("REPLACE",[name]) -> good $ "TODO " ++ show name ++ "\n"
-  ("DELETE",[name])  -> good $ "TODO " ++ show name ++ "\n"
-  _ -> unknown
-  where unknown = bad "Unknown command\n"
-        findResource = flip lookup $ map (\x -> (name x,x)) res
+app res req = case (requestMethod req,pathResource $ pathInfo req) of
+  ("GET",Just name)     -> good $ describe name
+  ("GET",Nothing)       -> good $ describeAll resources
+  ("PUT",Just name)     -> good $ "TODO\n"
+  ("REPLACE",Just name) -> good $ "TODO\n"
+  ("DELETE",Just name)  -> good $ "TODO\n"
+  _ -> bad "Invalid request\n"
+  where findResource = flip lookup $ map (\x -> (name x,x)) res
+        pathResource [name] = findResource name
+        pathResource _ = Nothing
 
-bad,good :: Monad m => String -> m Response
+bad,good :: Monad m => ByteString -> m Response
 bad = textualResponse badRequest400
 good = textualResponse ok200
  
 textualResponse code text = return $
                             responseLBS code
                             [("Content-Type", "text/plain")] $
-                            B.pack text
+                            text
 
 binaryResponse x = return $
                    responseLBS ok200

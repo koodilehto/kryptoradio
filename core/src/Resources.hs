@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 module Resources where
 
+import Data.ByteString.Lazy.Char8 (ByteString,pack)
 import Data.Text (Text,unpack)
 import Data.Word
 
@@ -18,16 +19,17 @@ resources = [Resource 0 "control" 0 "Kryptoradio control channel"
             ,Resource 5 "irc" 6 "Internet Relay Chat (subscribed channels only)"
             ]
 
-describe :: (Maybe Resource) -> String
-describe Nothing = "Resource is not registered\n"
-describe (Just Resource{..}) = showString   "resource id:  " $ shows rid $
-                               showString "\nname:         " $ showText name $
-                               showString "\npriority:     " $ shows priority $
-                               showString "\ndescription:  " $ showText desc $
-                               "\n"
+describe :: Resource -> ByteString
+describe Resource{..} = pack $
+                        showString   "resource id:  " $ shows rid $
+                        showString "\nname:         " $ showText name $
+                        showString "\npriority:     " $ shows priority $
+                        showString "\ndescription:  " $ showText desc $
+                        "\n"
 
-describeAll :: [Resource] -> String
-describeAll x = showString "Kryptoradio broadcaster is up and running.\nSupported resources: " $
+describeAll :: [Resource] -> ByteString
+describeAll x = pack $
+                showString "Kryptoradio broadcaster is up and running.\nSupported resources: " $
                 showList (map name x) "\n"
 
 showText :: Text -> ShowS
