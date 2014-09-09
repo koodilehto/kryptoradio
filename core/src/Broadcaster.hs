@@ -71,8 +71,3 @@ textualResponse code text = return $
                             responseLBS code
                             [("Content-Type", "text/plain")] $
                             text
-
-binaryResponse x = return $
-                   responseLBS ok200
-                   [("Content-Type", "application/octet-stream")]
-                   x
