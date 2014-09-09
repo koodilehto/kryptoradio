@@ -4,8 +4,10 @@ module Resources where
 import Data.ByteString.Lazy.Char8 (ByteString,pack)
 import Data.Text (Text,unpack)
 import Data.Word
+import Control.Monad.STM
 import Control.Concurrent.STM.TMVar
 import Data.Functor
+import GHC.Exts (sortWith)
 
 type RawResource = TMVar ByteString -> Resource
 
@@ -28,6 +30,10 @@ resources = [Resource 0 "control" 0 "Kryptoradio control channel"
 -- |Create transactional variables from raw resource text.
 newResources :: [RawResource] -> IO [Resource]
 newResources = mapM (<$> newEmptyTMVarIO)
+
+-- |Get new message using correct priority
+priorityTake :: [Resource] -> STM ByteString
+priorityTake res = foldr1 orElse $ map (takeTMVar.var) $ sortWith priority res
 
 describe :: Resource -> ByteString
 describe Resource{..} = pack $
