@@ -9,7 +9,7 @@ import Data.Functor
 import Data.Word
 import Data.Int
 
-serializator :: Int64 -> STM ByteString -> IO ()
+serializator :: Int64 -> STM (Word8,ByteString) -> IO ()
 serializator pad reader = do
   -- Get new data. If we have a fragment in buffer, do not wait for
   -- more data. Otherwise we block and wait.
@@ -19,7 +19,7 @@ serializator pad reader = do
   -- Prepare data
   let bs = case mbData of
         Nothing -> B.replicate (klpSize-pad) 0xfe
-        Just x -> toKRFs pad x -- TODO zlib, ecdsa
+        Just (rid,x) -> toKRFs pad $ rid `B.cons` x -- TODO zlib, ecdsa
   -- "Send" it
   print bs
   threadDelay ((fromIntegral $ B.length bs) * 10^3)

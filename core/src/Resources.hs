@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings, RecordWildCards, TupleSections #-}
 module Resources where
 
 import Data.ByteString.Lazy.Char8 (ByteString,pack)
@@ -31,9 +31,10 @@ resources = [Resource 0 "control" 0 "Kryptoradio control channel"
 newResources :: [RawResource] -> IO [Resource]
 newResources = mapM (<$> newEmptyTMVarIO)
 
--- |Get new message using correct priority
-priorityTake :: [Resource] -> STM ByteString
-priorityTake res = foldr1 orElse $ map (takeTMVar.var) $ sortWith priority res
+-- |Get resource id and new message using correct priority. 
+priorityTake :: [Resource] -> STM (Word8,ByteString)
+priorityTake res = foldr1 orElse $ map f $ sortWith priority res
+  where f Resource{..} = (rid,) <$> takeTMVar var
 
 describe :: Resource -> ByteString
 describe Resource{..} = pack $
