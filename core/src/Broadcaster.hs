@@ -22,15 +22,15 @@ import Serialization
 main = do
   let port = 3000
   res <- newResources resources
-  forkIO $ serializator 0 $ priorityTake res
+  forkIO $ serializator $ priorityTake res
   putStrLn $ "Listening on port " ++ show port
   run port $ app res
  
 app :: [Resource] -> Application
-app res req = case (requestMethod req,pathResource $ pathInfo req) of
-  ("GET",Just name)     -> good $ describe name
-  ("GET",Nothing)       -> good $ describeAll res
-  ("PUT",Just r) -> do
+app res req = case (requestMethod req,pathResource $ pathInfo req,pathInfo req) of
+  ("GET",Just name,_) -> good $ describe name
+  ("GET",_,[])        -> good $ describeAll res
+  ("PUT",Just r,_) -> do
     -- Put message in a queue
     packet <- requestBody req $$ sinkLbs
     ok <- liftIO $ atomically $ tryPutTMVar (var r) packet
@@ -41,7 +41,7 @@ app res req = case (requestMethod req,pathResource $ pathInfo req) of
         (_,Nothing,_) -> good "SENDING\n"
         (_,_,False)   -> bad "REPLACED\n"
         (_,_,True)    -> retry
-  ("REPLACE",Just r) -> do
+  ("REPLACE",Just r,_) -> do
     -- Replace existing message with a new
     packet <- requestBody req $$ sinkLbs
     ok <- liftIO $ atomically $ do
@@ -55,7 +55,7 @@ app res req = case (requestMethod req,pathResource $ pathInfo req) of
         (_,Nothing,_) -> good "SENDING\n"
         (_,_,False)   -> bad "REPLACED\n"
         (_,_,True)    -> retry
-  ("DELETE",Just r) -> do
+  ("DELETE",Just r,_) -> do
     -- Delete already queued message. NB! This incorrectly reports SENDING on the waiting request
     ok <- liftIO $ atomically $ tryTakeTMVar (var r)
     case ok of

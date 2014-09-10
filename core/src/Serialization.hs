@@ -9,25 +9,27 @@ import Data.Functor
 import Data.Word
 import Data.Int
 
-serializator :: Int64 -> STM (Word8,ByteString) -> IO ()
-serializator pad reader = do
-  -- Get new data. If we have a fragment in buffer, do not wait for
-  -- more data. Otherwise we block and wait.
-  mbData <- atomically $ (Just <$> reader) `orElse` if pad == 0
-                                                    then retry
-                                                    else return Nothing
-  -- Prepare data
-  let bs = case mbData of
-        Nothing -> B.replicate (klpSize-pad) 0xfe
-        Just (rid,x) -> toKRFs pad $ rid `B.cons` x -- TODO zlib, ecdsa
-  -- "Send" it
-  print bs
-  threadDelay ((fromIntegral $ B.length bs) * 10^3)
-  -- TODO tcdrain()
-  -- now we must check if get something to pad with
-  let offset = (pad + B.length bs) `mod` klpSize
-  putStrLn $ "waiting more, offset " ++ show offset
-  serializator offset reader
+serializator :: STM (Word8,ByteString) -> IO ()
+serializator reader = serializator' 0
+  where
+    serializator' pad = do
+      -- Get new data. If we have a fragment in buffer, do not wait for
+      -- more data. Otherwise we block and wait.
+      mbData <- atomically $ (Just <$> reader) `orElse` if pad == 0
+                                                        then retry
+                                                        else return Nothing
+      -- Prepare data
+      let bs = case mbData of
+            Nothing -> B.replicate (klpSize-pad) 0xfe
+            Just (rid,x) -> toKRFs pad $ rid `B.cons` x -- TODO zlib, ecdsa
+      -- "Send" it
+      print bs
+      threadDelay ((fromIntegral $ B.length bs) * 10^3)
+      -- TODO tcdrain()
+      -- now we must check if get something to pad with
+      let offset = (pad + B.length bs) `mod` klpSize
+      putStrLn $ "waiting more, offset " ++ show offset
+      serializator' offset
 
 -- |Split a Kryptoradio Resource Packet (KRP) to Kryptoradio Resource
 -- Fragments (KRF) and concatenate everything.
