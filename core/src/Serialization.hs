@@ -18,14 +18,14 @@ serializator pad reader = do
                                                     else return Nothing
   -- Prepare data
   let bs = case mbData of
-        Nothing -> B.replicate (178-pad) 0xfe
+        Nothing -> B.replicate (klpSize-pad) 0xfe
         Just x -> toKRFs pad x -- TODO zlib, ecdsa
   -- "Send" it
   print bs
   threadDelay ((fromIntegral $ B.length bs) * 10^3)
   -- TODO tcdrain()
   -- now we must check if get something to pad with
-  let offset = (pad + B.length bs) `mod` 178
+  let offset = (pad + B.length bs) `mod` klpSize
   putStrLn $ "waiting more, offset " ++ show offset
   serializator offset reader
 
@@ -33,9 +33,13 @@ serializator pad reader = do
 -- Fragments (KRF) and concatenate everything.
 toKRFs :: Int64 -> ByteString -> ByteString
 toKRFs pos bs = if B.null next
-                then fromIntegral (B.length cur) `B.cons` bs `B.append` pad
+                then fromIntegral (B.length cur) `B.cons` cur `B.append` pad
                 else 0xff `B.cons` cur `B.append` toKRFs 0 next
-  where (cur,next) = B.splitAt (fromIntegral $ 177-pos) bs
-        pad = if pos + B.length cur == 177
+  where (cur,next) = B.splitAt (fromIntegral $ klpSize-1-pos) bs
+        pad = if pos + B.length cur == klpSize-2
               then B.singleton 0xfe
               else B.empty
+
+-- |Kryptoradio link packet size is fixed to PES packet payload size
+klpSize :: Int64
+klpSize = 178
