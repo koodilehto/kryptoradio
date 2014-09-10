@@ -13,9 +13,9 @@ serializator :: Int64 -> STM ByteString -> IO ()
 serializator pad reader = do
   -- Get new data. If we have a fragment in buffer, do not wait for
   -- more data. Otherwise we block and wait.
-  mbData <- atomically $ if pad == 0
-                         then Just <$> reader
-                         else (Just <$> reader) `orElse` return Nothing
+  mbData <- atomically $ (Just <$> reader) `orElse` if pad == 0
+                                                    then retry
+                                                    else return Nothing
   -- Prepare data
   let bs = case mbData of
         Nothing -> B.replicate (178-pad) 0xfe
