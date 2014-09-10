@@ -22,7 +22,7 @@ import Serialization
 main = do
   let port = 3000
   res <- newResources resources
-  forkIO $ serializator $ atomically $ priorityTake res
+  forkIO $ serializator 0 $ priorityTake res
   putStrLn $ "Listening on port " ++ show port
   run port $ app res
  
