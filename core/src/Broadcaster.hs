@@ -18,18 +18,21 @@ import Network.Wai
 import Network.Wai.Handler.Warp (run)
 import Resources
 import Serialization
+import SyncTimer
 
 main = do
   let port = 3000
   res <- newResources resources
-  forkIO $ serializator $ priorityTake res
+  timer <- newSyncTimer
+  forkIO $ serializator timer $ priorityTake res
   putStrLn $ "Listening on port " ++ show port
-  run port $ app res
+  run port $ app res timer
  
-app :: [Resource] -> Application
-app res req = case (requestMethod req,pathResource $ pathInfo req,pathInfo req) of
+app :: [Resource] -> SyncVar -> Application
+app res timer req = case (requestMethod req,pathResource $ pathInfo req,pathInfo req) of
   ("GET",Just name,_) -> good $ describe name
   ("GET",_,[])        -> good $ describeAll res
+  ("GET",_,[sync])    -> liftIO (waitSync timer) >> good "SYNC\n"
   ("PUT",Just r,_) -> do
     -- Put message in a queue
     packet <- requestBody req $$ sinkLbs
