@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
-module Broadcaster where
+module Main where
 
 import Control.Monad (unless)
 import Control.Monad.STM
