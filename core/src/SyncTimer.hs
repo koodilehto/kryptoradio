@@ -5,34 +5,25 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Concurrent
 import Control.Concurrent.STM.TVar
-import Data.Time.Clock.POSIX
 
-type SyncVar = TVar POSIXTime
+type SyncAct = STM Integer
 
-syncInterval :: POSIXTime
-syncInterval = 60 -- Sync every 60 seconds
+syncInterval :: Int
+syncInterval = 60 -- seconds
 
 -- |Create sync timer. There needs to be only one instance wide timer.
-newSyncTimer :: IO SyncVar
-newSyncTimer = newTVarIO 0
+newSyncTimer :: IO SyncAct
+newSyncTimer = do
+  var <- newTVarIO 1
+  forkIO $ forever $ do
+    threadDelay $ syncInterval*10^6
+    atomically $ modifyTVar' var succ
+  return $ readTVar var
 
--- |Reset timer if there is certain amount of time since last
--- reset. Return True if it's time for a sync. It is intentional
--- feature that timer is not reset periodically but when this function
--- is called.
-maybeReset :: SyncVar -> IO Bool
-maybeReset var = do
-  trigTime <- readTVarIO var
-  now <- getPOSIXTime
-  if trigTime > now
-    then return False
-    else do atomically $ writeTVar var $ now + syncInterval
-            return True
-
--- |Wait for a sync. This is not the time sync will happen but it is
--- the time that sync will be emitted when something is written.
-waitSync :: SyncVar -> IO ()
-waitSync var = do
-  trigTime <- readTVarIO var
-  now <- getPOSIXTime
-  when (trigTime > now) $ threadDelay $ ceiling $ 10^6 * (trigTime-now)
+-- |Wait for a sync. This blocks until sync number `start` occurs. More
+-- precisely, when the transmitter is also starting the sync. The time
+-- of sync may be earlier than when it actually goes to the air.
+waitSync :: SyncAct -> Integer -> SyncAct
+waitSync act start = do
+  now <- act
+  if now <= start then retry else return now

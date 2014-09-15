@@ -10,30 +10,23 @@ import Data.Word
 import Data.Int
 import SyncTimer
 
-serializator :: SyncVar -> STM (Word8,ByteString) -> IO ()
-serializator timer reader = serializator' 0
+data ReadResult = Empty | Sync Integer | Packet (Word8,ByteString)
+
+serializator :: SyncAct -> STM (Word8,ByteString) -> IO ()
+serializator timer reader = serializator' 0 0
   where
-    serializator' pad = do
+    serializator' pad i = do
       -- Get new data. If we have a fragment in buffer, do not wait for
       -- more data. Otherwise we block and wait.
-      mbData <- atomically $ (Just <$> reader) `orElse` if pad == 0
-                                                        then retry
-                                                        else return Nothing
-      -- Prepare data
-      let trail = if pad==0 then B.empty else B.replicate (klpSize-pad) 0xfe
-      bs <- case mbData of
-        Nothing -> return trail
-        Just (rid,x) -> do
+      incoming <- atomically $ (Sync <$> waitSync timer i) `orElse` (Packet <$> reader) `orElse` waitIfEmpty
+
+      bs <- case incoming of
+        Empty -> return trail -- Pad everything
+        Sync _ -> return $ trail `B.append` syncPacket
+        Packet (rid,x) -> do
           let krp = rid `B.cons` x -- TODO zlib, ecdsa
-
-          -- Let's do syncing if needed
-          sync <- maybeReset timer
-
-          -- If synced, pad previous packet and put version header
-          -- first. Otherwise just throw data in without padding.
-          return $ if sync
-                   then B.concat [trail,syncPacket,toKRFs 2 krp]
-                   else toKRFs pad krp
+          return $ toKRFs pad krp
+      
       -- "Send" it
       print bs
       threadDelay ((fromIntegral $ B.length bs) * 10^3)
@@ -41,7 +34,12 @@ serializator timer reader = serializator' 0
       -- now we must check if get something to pad with
       let offset = (pad + B.length bs) `mod` klpSize
       putStrLn $ "waiting more, offset " ++ show offset
-      serializator' offset
+      serializator' offset $ case incoming of
+        Sync next -> next
+        _         -> i
+      where
+        trail       = if pad == 0 then B.empty else B.replicate (klpSize-pad) 0xfe
+        waitIfEmpty = if pad == 0 then retry   else return Empty
 
 -- |Split a Kryptoradio Resource Packet (KRP) to Kryptoradio Resource
 -- Fragments (KRF) and concatenate everything.
