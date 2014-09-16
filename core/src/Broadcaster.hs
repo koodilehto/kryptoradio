@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable, RecordWildCards #-}
 module Main where
 
 import Control.Monad (unless)
@@ -13,12 +13,27 @@ import Data.List
 import Network.HTTP.Types (ok200,badRequest400)
 import Network.Wai
 import Network.Wai.Handler.Warp (run)
+import System.Console.CmdArgs.Implicit hiding (name)
 import Resources
 import Serialization
 import SyncTimer
 
+data Args = Args { device :: String
+                 , baud   :: Maybe Int
+                 , port   :: Int
+                 } deriving (Show, Data, Typeable)
+
+synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
+                , baud = def &= help "Baud rate on serial port"
+                , port = 3000 &= help "HTTP port to listen to (default: 3000)"
+                }
+           &= program "kryptoradio-broadcaster"
+           &= summary "Kryptoradio Broadcaster v0.0.1"
+           &= help "Listens to given HTTP port and sends commands to \
+                   \serial port connected to DVB encoder."
+
 main = do
-  let port = 3000
+  Args{..} <- cmdArgs synopsis
   res <- newResources resources
   timer <- newSyncTimer
   forkIO $ serializator timer $ priorityTake res
