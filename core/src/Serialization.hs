@@ -13,8 +13,8 @@ import SyncTimer
 
 data ReadResult = Empty | Sync Integer | Packet (Word8,ByteString)
 
-serializator :: SyncAct -> STM (Word8,ByteString) -> Handle -> IO ()
-serializator timer reader h = serializator' 0 0
+serializator :: SyncAct -> STM (Word8,ByteString) -> (Handle,IO ()) -> IO ()
+serializator timer reader (h,drain) = serializator' 0 0
   where
     serializator' pad i = do
       -- Get new data. If we have a fragment in buffer, do not wait for
@@ -30,9 +30,9 @@ serializator timer reader h = serializator' 0 0
       
       -- Send it
       B.hPut h bs
-      hFlush h
-      -- TODO tcdrain()
-      -- now we must check if get something to pad with
+      drain
+
+      -- Calculate new offset in PES packet
       let offset = (pad + B.length bs) `mod` klpSize
       putStrLn $ "waiting more, offset " ++ show offset
       serializator' offset $ case incoming of

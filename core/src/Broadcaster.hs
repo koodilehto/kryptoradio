@@ -39,8 +39,8 @@ main = do
   Args{..} <- cmdArgs synopsis
   res <- newResources resources
   timer <- newSyncTimer
-  h <- openSerialRaw device baud
-  forkIO $ serializator timer (priorityTake res) h
+  serial <- openSerialRaw device baud
+  forkIO $ serializator timer (priorityTake res) serial
   putStrLn $ "Listening on port " ++ show port
   run port $ app res timer
 
