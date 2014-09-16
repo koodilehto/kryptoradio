@@ -38,6 +38,10 @@ fetch () {
     false
 }
 
+send () {
+    curl -X PUT http://localhost:3000/fimk --data-binary "@$RAW_OUT"
+}
+
 trap clean EXIT INT
 
 while true; do
@@ -53,7 +57,7 @@ while true; do
     if test "$LAST_SENT_TX" -a "$LAST_SENT_TX" != "$NEWEST_TX"; then
 	echo " found new transactions" >&2
 	fetch transactions transactions.xsl --stringparam last_tx "$LAST_SENT_TX"
-	cat "$RAW_OUT"
+	send
     fi
 
     LAST_SENT_TX=$NEWEST_TX
@@ -68,5 +72,5 @@ while true; do
     fi
 
     fetch "$NEXT_ID" block.xsl
-    cat "$RAW_OUT"
+    send
 done
