@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, RecordWildCards #-}
 module Main where
 
+import Blaze.ByteString.Builder.Char.Utf8 (fromShow,fromChar)
 import Control.Monad (unless)
 import Control.Monad.STM
 import Control.Concurrent (forkIO)
+import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM.TMVar
 import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as B
@@ -57,45 +59,43 @@ app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,
   ("GET",_,[sync])    -> do
     i <- atomically timer
     atomically $ waitSync timer i
-    out ok200 "SYNC\n"
+    out ok200 "Sync\n"
   ("PUT",Just r,_) -> do
     -- Put message in a queue
+    delivery <- newTVarIO Waiting
     packet <- lazyRequestBody req
-    ok <- atomically $ tryPutTMVar (var r) packet
-    act <- atomically $ do
-      e <- tryReadTMVar $ var r
-      case (ok,e,Just packet==e) of
-        (False,_,_)   -> return $ out badRequest400 "FULL\n"
-        (_,Nothing,_) -> return $ out ok200 "SENDING\n"
-        (_,_,False)   -> return $ out badRequest400 "REPLACED\n"
-        (_,_,True)    -> retry
-    act
-  ("REPLACE",Just r,_) -> do
-    -- Replace existing message with a new
-    packet <- lazyRequestBody req
-    ok <- atomically $ do
-      e <- isEmptyTMVar (var r)
-      unless e $ swapTMVar (var r) packet >> return ()
-      return e
-    act <- atomically $ do
-      e <- tryReadTMVar $ var r
-      case (ok,e,Just packet==e) of
-        (True,_,_)    -> return $ out badRequest400 "EMPTY\n"
-        (_,Nothing,_) -> return $ out ok200 "SENDING\n"
-        (_,_,False)   -> return $ out badRequest400 "REPLACED\n"
-        (_,_,True)    -> retry
-    act
+    atomically $ do
+      old <- tryTakeTMVar (var r)
+      -- If something is queued, report that we threw it away
+      case old of
+        Just (oldState,_) -> writeTVar oldState Replaced
+        Nothing -> return ()
+      putTMVar (var r) (delivery,packet)
+    respond $ responseStream ok200 headers $ loop delivery Start
   ("DELETE",Just r,_) -> do
-    -- Delete already queued message. NB! This incorrectly reports SENDING on the waiting request
-    ok <- atomically $ tryTakeTMVar (var r)
-    case ok of
-      (Just _) -> out ok200 "DELETED\n"
-      Nothing  -> out badRequest400 "EMPTY\n"
+    -- Delete already queued message.
+    deleted <- atomically $ do
+      old <- tryTakeTMVar (var r)
+      case old of
+        Just (oldState,_) -> do
+          writeTVar oldState Replaced
+          return True
+        Nothing -> return False
+    out ok200 $ if deleted then "Ok\n" else "Empty\n"
   _ -> out badRequest400 "Invalid request\n"
   where findResource = flip lookup $ map (\x -> (name x,x)) res
         pathResource [name] = findResource name
         pathResource _ = Nothing
-        out code text = respond $
-                        responseLBS code
-                        [("Content-Type", "text/plain")] $
-                        text
+        headers = [("Content-Type", "text/plain")]
+        out code text = respond $ responseLBS code headers text
+        loop var old write flush = do
+          new <- atomically $ do
+            x <- readTVar var
+            if (x==old) then retry else return x
+          write $ fromShow new
+          write $ fromChar '\n'
+          flush
+          case new of
+            Replaced -> return ()
+            Sent -> return ()
+            _ -> loop var new write flush

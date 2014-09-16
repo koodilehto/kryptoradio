@@ -5,17 +5,27 @@ import Data.ByteString.Lazy.Char8 (ByteString,pack)
 import Data.Text (Text,unpack)
 import Data.Word
 import Control.Monad.STM
+import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM.TMVar
 import Data.Functor
 import GHC.Exts (sortWith)
 
-type RawResource = TMVar ByteString -> Resource
+data Delivery = Start    -- ^ Beginning state. Never stored in TVar.
+              | Waiting  -- ^ The data is enqueued.
+              | Replaced -- ^ Not delivered. Replaced or deleted.
+              | Sending  -- ^ Parts of data is already sent.
+              | Sent     -- ^ The data has been delivered.
+              deriving (Eq,Show)
+
+type Content = (TVar Delivery,ByteString)
+
+type RawResource = TMVar Content -> Resource
 
 data Resource = Resource { rid      :: Word8
                          , name     :: Text
                          , priority :: Word8
                          , desc     :: Text
-                         , var      :: TMVar ByteString
+                         , var      :: TMVar Content
                          }
 
 resources :: [RawResource]
@@ -32,7 +42,7 @@ newResources :: [RawResource] -> IO [Resource]
 newResources = mapM (<$> newEmptyTMVarIO)
 
 -- |Get resource id and new message using correct priority. 
-priorityTake :: [Resource] -> STM (Word8,ByteString)
+priorityTake :: [Resource] -> STM (Word8,Content)
 priorityTake res = foldr1 orElse $ map f $ sortWith priority res
   where f Resource{..} = (rid,) <$> takeTMVar var
 

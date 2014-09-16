@@ -3,6 +3,7 @@ module Serialization where
 import Control.Monad (forever)
 import Control.Monad.STM
 import Control.Concurrent (threadDelay)
+import Control.Concurrent.STM.TVar
 import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy as B
 import Data.Functor
@@ -10,10 +11,11 @@ import Data.Word
 import Data.Int
 import System.IO (Handle,hFlush)
 import SyncTimer
+import Resources (Content,Delivery(..))
 
-data ReadResult = Empty | Sync Integer | Packet (Word8,ByteString)
+data ReadResult = Empty | Sync Integer | Packet (Word8,Content)
 
-serializator :: SyncAct -> STM (Word8,ByteString) -> (Handle,IO ()) -> IO ()
+serializator :: SyncAct -> STM (Word8,Content) -> (Handle,IO ()) -> IO ()
 serializator timer reader (h,drain) = serializator' 0 0
   where
     serializator' pad i = do
@@ -21,16 +23,17 @@ serializator timer reader (h,drain) = serializator' 0 0
       -- more data. Otherwise we block and wait.
       incoming <- atomically $ (Sync <$> waitSync timer i) `orElse` (Packet <$> reader) `orElse` waitIfEmpty
 
-      bs <- case incoming of
-        Empty -> return trail -- Pad everything
-        Sync _ -> return $ trail `B.append` syncPacket
-        Packet (rid,x) -> do
-          let krp = rid `B.cons` x -- TODO zlib, ecdsa
-          return $ toKRFs pad krp
-      
+      let (report,bs) = case incoming of
+            Empty -> (skip,trail) -- Pad everything
+            Sync _ -> (skip,trail `B.append` syncPacket)
+            Packet (rid,(delivery,msg)) ->
+              (atomically.writeTVar delivery,toKRFs pad $ rid `B.cons` msg)
+
       -- Send it
+      report Sending
       B.hPut h bs
       drain
+      report Sent
 
       -- Calculate new offset in PES packet
       let offset = (pad + B.length bs) `mod` klpSize
@@ -41,6 +44,7 @@ serializator timer reader (h,drain) = serializator' 0 0
       where
         trail       = if pad == 0 then B.empty else B.replicate (klpSize-pad) 0xfe
         waitIfEmpty = if pad == 0 then retry   else return Empty
+        skip _ = return ()
 
 -- |Split a Kryptoradio Resource Packet (KRP) to Kryptoradio Resource
 -- Fragments (KRF) and concatenate everything.
