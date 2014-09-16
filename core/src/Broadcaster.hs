@@ -14,17 +14,20 @@ import Network.HTTP.Types (ok200,badRequest400)
 import Network.Wai
 import Network.Wai.Handler.Warp (run)
 import System.Console.CmdArgs.Implicit hiding (name)
+import System.IO
+
 import Resources
+import Serial
 import Serialization
 import SyncTimer
 
 data Args = Args { device :: String
-                 , baud   :: Maybe Int
+                 , baud   :: Int
                  , port   :: Int
                  } deriving (Show, Data, Typeable)
 
 synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
-                , baud = def &= help "Baud rate on serial port"
+                , baud = 0 &= help "Baud rate on serial port (default: do not set)"
                 , port = 3000 &= help "HTTP port to listen to (default: 3000)"
                 }
            &= program "kryptoradio-broadcaster"
@@ -36,7 +39,8 @@ main = do
   Args{..} <- cmdArgs synopsis
   res <- newResources resources
   timer <- newSyncTimer
-  forkIO $ serializator timer $ priorityTake res
+  h <- openSerialRaw device baud
+  forkIO $ serializator timer (priorityTake res) h
   putStrLn $ "Listening on port " ++ show port
   run port $ app res timer
 

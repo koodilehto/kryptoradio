@@ -8,12 +8,13 @@ import qualified Data.ByteString.Lazy as B
 import Data.Functor
 import Data.Word
 import Data.Int
+import System.IO (Handle,hFlush)
 import SyncTimer
 
 data ReadResult = Empty | Sync Integer | Packet (Word8,ByteString)
 
-serializator :: SyncAct -> STM (Word8,ByteString) -> IO ()
-serializator timer reader = serializator' 0 0
+serializator :: SyncAct -> STM (Word8,ByteString) -> Handle -> IO ()
+serializator timer reader h = serializator' 0 0
   where
     serializator' pad i = do
       -- Get new data. If we have a fragment in buffer, do not wait for
@@ -27,9 +28,9 @@ serializator timer reader = serializator' 0 0
           let krp = rid `B.cons` x -- TODO zlib, ecdsa
           return $ toKRFs pad krp
       
-      -- "Send" it
-      print bs
-      threadDelay ((fromIntegral $ B.length bs) * 10^3)
+      -- Send it
+      B.hPut h bs
+      hFlush h
       -- TODO tcdrain()
       -- now we must check if get something to pad with
       let offset = (pad + B.length bs) `mod` klpSize
