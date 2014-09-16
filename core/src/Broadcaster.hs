@@ -10,9 +10,10 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.List
+import Data.String (fromString)
 import Network.HTTP.Types (ok200,badRequest400)
 import Network.Wai
-import Network.Wai.Handler.Warp (run)
+import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
 import System.IO
 
@@ -23,11 +24,13 @@ import SyncTimer
 
 data Args = Args { device :: String
                  , baud   :: Int
+                 , host   :: String
                  , port   :: Int
                  } deriving (Show, Data, Typeable)
 
 synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
                 , baud = 0 &= help "Baud rate on serial port (default: do not set)"
+                , host = "*" &= help "IP address to bind to (default: all)"
                 , port = 3000 &= help "HTTP port to listen to (default: 3000)"
                 }
            &= program "kryptoradio-broadcaster"
@@ -37,12 +40,15 @@ synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
 
 main = do
   Args{..} <- cmdArgs synopsis
+  let set = setHost (fromString host) $
+            setPort port $
+            defaultSettings
   res <- newResources resources
   timer <- newSyncTimer
   serial <- openSerialRaw device baud
   forkIO $ serializator timer (priorityTake res) serial
-  putStrLn $ "Listening on port " ++ show port
-  run port $ app res timer
+  putStrLn $ "Binding to " ++ show (getHost set) ++ ", port " ++ show (getPort set)
+  runSettings set $ app res timer
 
 app :: [Resource] -> SyncAct -> Application
 app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,pathInfo req) of
