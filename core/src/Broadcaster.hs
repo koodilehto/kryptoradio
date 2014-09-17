@@ -62,25 +62,31 @@ app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,
     atomically $ waitSync timer i
     respond $ text ok200 "Sync"
   ("PUT",Just r,_) -> do
-    -- Put message in a queue
-    delivery <- newTVarIO Waiting
-    packet <- lazyRequestBody req
-    atomically $ do
-      old <- tryTakeTMVar (var r)
-      -- If something is queued, report that we threw it away
-      case old of
-        Just (oldState,_) -> writeTVar oldState Replaced
-        Nothing -> return ()
-      putTMVar (var r) (delivery,packet)
-    -- Deciding delivery log style. Either simple which just says if
-    -- it's queued or replaced by using response code, or full which
-    -- reports all intermediate steps, including final delivery.
-    case findQuery "delivery" of
-      Just (Just "simple") -> simpleDelivery delivery >>= respond
-      Nothing              -> simpleDelivery delivery >>= respond
-      Just (Just "full")   -> respond $ responseStream ok200 plainText $
-                              fullDelivery delivery Start
-      _ -> respond $ text badRequest400 "Invalid delivery option"
+    let deliveryOk = case findQuery "delivery" of
+          Just (Just "simple") -> Just False
+          Nothing              -> Just False
+          Just (Just "full")   -> Just True
+          _                    -> Nothing
+    case deliveryOk of
+      Just isFullDelivery -> do
+        -- All is fine, start sending
+        delivery <- newTVarIO Waiting
+        packet <- lazyRequestBody req
+        atomically $ do
+          old <- tryTakeTMVar (var r)
+          -- If something is queued, report that we threw it away
+          case old of
+            Just (oldState,_) -> writeTVar oldState Replaced
+            Nothing -> return ()
+          putTMVar (var r) (delivery,packet)
+        -- Deciding delivery log style. Either simple which just says if
+        -- it's queued or replaced by using response code, or full which
+        -- reports all intermediate steps, including final delivery.
+        if isFullDelivery
+           then respond $ responseStream ok200 plainText $
+                fullDelivery delivery Start
+           else simpleDelivery delivery >>= respond
+      Nothing -> respond $ text badRequest400 "Invalid delivery option"
   ("DELETE",Just r,_) -> do
     -- Delete already queued message.
     deleted <- atomically $ do
