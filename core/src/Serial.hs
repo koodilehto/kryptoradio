@@ -1,33 +1,35 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Serial (openSerialRaw) where
+module Serial (openSerialOutRaw) where
 
-import Control.Monad
 import Foreign.C
-import Foreign.C.Error
 import System.IO
 import System.Posix.IO
 import System.Posix.Types
- 
-foreign import ccall "serial_open_raw" serial_open_raw :: CString -> CInt -> IO CInt
+import Data.ByteString.Lazy (ByteString, hPut)
+
+foreign import ccall "init_serial_port" init_serial_port :: CInt -> CInt -> IO CInt
 foreign import ccall "tcdrain" tcdrain :: CInt -> IO CInt
 
--- |Opens serial port using given speed and returns a Handle to
--- it. The catch is that this supports even the non-standard bit rates
--- like 250000 bps. Also, the device is opened in raw mode, meaning
--- that the input and output are not altered in operating system
--- level.
-openSerialRaw :: FilePath -> Int -> IO (Handle,IO ())
-openSerialRaw file speed = do
-  fd_c <- withCString file $ \s -> throwErrnoIfMinus1Retry
-                                   "Unable to open serial port" $
-                                   serial_open_raw s (fromIntegral speed)
-  h <- fdToHandle $ Fd fd_c
-  return (h,drainSerial h fd_c)
+-- |Opens serial port for output in raw 8-bit mode using given speed
+-- and returns functions for closing and writing to the port. It
+-- supports even the non-standard bit rates like 250000 bps. In raw
+-- 8-bit mode the output is not altered by the operating system.
+openSerialOutRaw :: FilePath -> Int -> IO (IO (), ByteString -> IO ())
+openSerialOutRaw file speed = do
+  Fd fd <- openFd file WriteOnly Nothing OpenFileFlags{ append    = False
+                                                      , exclusive = False
+                                                      , noctty    = True
+                                                      , nonBlock  = False
+                                                      , trunc     = False
+                                                      }
+  throwErrnoIfMinus1Retry_ "Unable to configure serial port" $
+    init_serial_port fd (fromIntegral speed)
 
--- |Flush and drain serial port buffers, including hardware
--- buffer. Given file descriptor and Handle must point to the same
--- underlying file!
-drainSerial :: Handle -> CInt -> IO ()
-drainSerial h fd = do
-  hFlush h
-  throwErrnoIfMinus1Retry_ "Unable to drain buffers" $ tcdrain fd
+  h <- fdToHandle $ Fd fd
+  return (hClose h, \bs -> hPut h bs >> hFlush h >> drainSerial fd)
+
+-- |Drain serial port buffers, including hardware buffer. This
+-- supports retrying if interrupted, unlike `drainOutput` in
+-- System.Posix.Terminal.
+drainSerial :: CInt -> IO ()
+drainSerial fd = throwErrnoIfMinus1Retry_ "Unable to drain buffers" $ tcdrain fd

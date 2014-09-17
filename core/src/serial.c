@@ -35,28 +35,19 @@
 static tcflag_t to_speed(const int speed);
 
 /**
- * Opens serial port and sets speed to anything, including
- * non-standard values. The argument flags must include one of the
- * following access modes: O_RDONLY, O_WRONLY, or O_RDWR. This
- * function returns -1 and sets errno, if it fails. Otherwise an open
- * file descriptor is returned.
+ * Configures serial port to use raw 8-bit mode and given baud
+ * rate. This function also supports non-standard baud rates if the
+ * underlying hardware is capable. If it fails, -1 is returned and
+ * errno is set. Otherwise, zero is returned.
  */
-int serial_open_raw(const char *dev, int speed)
+int init_serial_port(int fd, int speed)
 {
-	// Open device
-	int fd = open(dev, O_RDWR | O_NOCTTY);
-	if (fd == -1) goto not_open;
-
-	// Zero speed says it should be treated as a normal char
-	// device, not as a serial port
-	if (speed == 0) return fd;
-
 	// Check if speed preset is found or do we need to set a custom speed
 	tcflag_t speed_preset = to_speed(speed);
 	if (speed_preset == B0) {
 		// Find current configuration
 		struct serial_struct serial;
-		if(ioctl(fd, TIOCGSERIAL, &serial) == -1) goto fail;
+		if(ioctl(fd, TIOCGSERIAL, &serial) == -1) return -1;
 		serial.flags = (serial.flags & ~ASYNC_SPD_MASK) | ASYNC_SPD_CUST;
 		serial.custom_divisor = (serial.baud_base + (speed / 2)) / speed;
 
@@ -65,11 +56,11 @@ int serial_open_raw(const char *dev, int speed)
 		if (real_speed < speed * 98 / 100 ||
 		    real_speed > speed * 102 / 100) {
 			errno = ENOTSUP;
-			goto fail;
+			return -1;
 		}
 
 		// Activate
-		if(ioctl(fd, TIOCSSERIAL, &serial) == -1) goto fail;
+		if(ioctl(fd, TIOCSSERIAL, &serial) == -1) return -1;
 
 		// Custom baudrate only works with this magic value
 		speed_preset = B38400;
@@ -79,13 +70,9 @@ int serial_open_raw(const char *dev, int speed)
 	struct termios term;
 	term.c_cflag = speed_preset | CS8 | CLOCAL | CREAD;
 	cfmakeraw(&term);
-	if (tcsetattr(fd,TCSANOW,&term) == -1) goto fail;
+	if (tcsetattr(fd,TCSANOW,&term) == -1) return -1;
 
-	return fd;
-fail:
-	close(fd);
-not_open:
-	return -1;
+	return 0;
 }
 
 /**

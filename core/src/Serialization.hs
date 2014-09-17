@@ -15,8 +15,8 @@ import Resources (Content,Delivery(..))
 
 data ReadResult = Empty | Sync Integer | Packet (Word8,Content)
 
-serializator :: SyncAct -> STM (Word8,Content) -> (Handle,IO ()) -> IO ()
-serializator timer reader (h,drain) = serializator' 0 0
+serializator :: SyncAct -> STM (Word8,Content) -> (ByteString -> IO ()) -> IO ()
+serializator timer reader writeSerial = serializator' 0 0
   where
     serializator' pad i = do
       -- Get new data. If we have a fragment in buffer, do not wait for
@@ -31,8 +31,7 @@ serializator timer reader (h,drain) = serializator' 0 0
 
       -- Send it
       report Sending
-      B.hPut h bs
-      drain
+      writeSerial bs
       report Sent
 
       -- Calculate new offset in PES packet

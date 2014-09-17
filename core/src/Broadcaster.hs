@@ -48,8 +48,8 @@ main = do
             defaultSettings
   res <- newResources resources
   timer <- newSyncTimer
-  serial <- openSerialRaw device baud
-  forkIO $ serializator timer (priorityTake res) serial
+  (serialClose,writeSerial) <- openSerialOutRaw device baud
+  forkIO $ serializator timer (priorityTake res) writeSerial
   putStrLn $ "Binding to " ++ show (getHost set) ++ ", port " ++ show (getPort set)
   runSettings set $ app res timer
 
