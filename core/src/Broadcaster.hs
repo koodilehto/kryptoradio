@@ -9,11 +9,12 @@ import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM.TMVar
 import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString as BS
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.List
 import Data.String (fromString)
-import Network.HTTP.Types (ok200,badRequest400)
+import Network.HTTP.Types (Status,Query,ok200,badRequest400,conflict409)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
@@ -54,12 +55,12 @@ main = do
 
 app :: [Resource] -> SyncAct -> Application
 app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,pathInfo req) of
-  ("GET",Just name,_) -> out ok200 $ describe name
-  ("GET",_,[])        -> out ok200 $ describeAll res
+  ("GET",Just name,_) -> respond $ text ok200 $ describe name
+  ("GET",_,[])        -> respond $ text ok200 $ describeAll res
   ("GET",_,[sync])    -> do
     i <- atomically timer
     atomically $ waitSync timer i
-    out ok200 "Sync\n"
+    respond $ text ok200 "Sync"
   ("PUT",Just r,_) -> do
     -- Put message in a queue
     delivery <- newTVarIO Waiting
@@ -71,7 +72,15 @@ app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,
         Just (oldState,_) -> writeTVar oldState Replaced
         Nothing -> return ()
       putTMVar (var r) (delivery,packet)
-    respond $ responseStream ok200 headers $ loop delivery Start
+    -- Deciding delivery log style. Either simple which just says if
+    -- it's queued or replaced by using response code, or full which
+    -- reports all intermediate steps, including final delivery.
+    case findQuery "delivery" of
+      Just (Just "simple") -> simpleDelivery delivery >>= respond
+      Nothing              -> simpleDelivery delivery >>= respond
+      Just (Just "full")   -> respond $ responseStream ok200 plainText $
+                              fullDelivery delivery Start
+      _ -> respond $ text badRequest400 "Invalid delivery option"
   ("DELETE",Just r,_) -> do
     -- Delete already queued message.
     deleted <- atomically $ do
@@ -81,14 +90,23 @@ app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,
           writeTVar oldState Replaced
           return True
         Nothing -> return False
-    out ok200 $ if deleted then "Ok\n" else "Empty\n"
-  _ -> out badRequest400 "Invalid request\n"
+    respond $ if deleted
+              then text ok200 "Ok"
+              else text conflict409 "Empty"
+  _ -> respond $ text badRequest400 "Invalid request"
   where findResource = flip lookup $ map (\x -> (name x,x)) res
         pathResource [name] = findResource name
         pathResource _ = Nothing
-        headers = [("Content-Type", "text/plain")]
-        out code text = respond $ responseLBS code headers text
-        loop var old write flush = do
+        findQuery :: BS.ByteString -> Maybe (Maybe BS.ByteString)
+        findQuery = flip lookup $ queryString req
+        simpleDelivery var = atomically $ do
+          x <- readTVar var
+          case x of
+            Replaced -> return $ text conflict409 "Replaced"
+            Sending  -> return $ text ok200 "Sending"
+            Sent     -> return $ text ok200 "Sending" -- Not "Sent" by purpose
+            _        -> retry
+        fullDelivery var old write flush = do
           new <- atomically $ do
             x <- readTVar var
             if (x==old) then retry else return x
@@ -98,4 +116,10 @@ app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,
           case new of
             Replaced -> return ()
             Sent -> return ()
-            _ -> loop var new write flush
+            _ -> fullDelivery var new write flush
+
+-- |HTTP plain text response with custom status code and message.
+text :: Status -> ByteString -> Response
+text code text = responseLBS code plainText $ text `B.append` "\n"
+
+plainText = [("Content-Type", "text/plain")]
