@@ -2,7 +2,7 @@
 module Main where
 
 import Blaze.ByteString.Builder.Char.Utf8 (fromShow,fromChar)
-import Control.Monad (unless)
+import Control.Monad (when)
 import Control.Monad.STM
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM.TVar
@@ -22,6 +22,7 @@ import System.IO
 
 import Resources
 import Serial
+import MockSerial
 import Serialization
 import SyncTimer
 
@@ -29,12 +30,17 @@ data Args = Args { device :: String
                  , baud   :: Int
                  , host   :: String
                  , port   :: Int
+                 , mock   :: Bool
                  } deriving (Show, Data, Typeable)
 
 synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
-                , baud = 0 &= help "Baud rate on serial port (default: do not set)"
+                , baud = 0 &= help "Baud rate on serial port (required if not in mock mode)"
                 , host = "*" &= help "IP address to bind to (default: all)"
                 , port = 3000 &= help "HTTP port to listen to (default: 3000)"
+                , mock = False &= help "Use file or named pipe instead of \
+                                       \real serial hardware. If baud rate is \
+                                       \set, it emulates limited throughput, \
+                                       \too."
                 }
            &= program "kryptoradio-broadcaster"
            &= summary "Kryptoradio Broadcaster v0.0.1"
@@ -43,12 +49,15 @@ synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
 
 main = do
   Args{..} <- cmdArgs synopsis
+  when (not mock && baud == 0) $ error "Baud rate is not set. See --help"
   let set = setHost (fromString host) $
             setPort port $
             defaultSettings
   res <- newResources resources
   timer <- newSyncTimer
-  (serialClose,writeSerial) <- openSerialOutRaw device baud
+  (serialClose,writeSerial) <- if mock
+                               then openMockSerialOut device baud
+                               else openSerialOutRaw device baud
   forkIO $ serializator timer (priorityTake res) writeSerial
   putStrLn $ "Binding to " ++ show (getHost set) ++ ", port " ++ show (getPort set)
   runSettings set $ app res timer
