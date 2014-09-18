@@ -20,11 +20,11 @@ import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
 import System.IO
 
-import Resources
-import Serial
-import MockSerial
-import Serialization
-import SyncTimer
+import Kryptoradio.Core.Resources
+import Kryptoradio.Core.Serial
+import Kryptoradio.Core.MockSerial
+import Kryptoradio.Core.Serialization
+import Kryptoradio.Core.SyncTimer
 
 data Args = Args { device :: String
                  , baud   :: Int

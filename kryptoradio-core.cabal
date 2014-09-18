@@ -5,7 +5,7 @@ description:   Contains tools for broadcasting and receiving KryptoRadio stream
                under Linux. Contains HTTP and Unix socket interfaces.
 category:      Utils
 license:       AGPL-3
-license-file:  ../LICENSE
+license-file:  LICENSE
 author:        Joel Lehtonen
 maintainer:    joel.lehtonen@koodilehto.fi
 build-type:    Simple
@@ -15,9 +15,9 @@ source-repository head
   location: git://github.com/koodilehto/kryptoradio.git
 
 executable kryptoradio-broadcast
-  hs-source-dirs: src
-  c-sources:      src/serial.c
-  main-is:        Broadcaster.hs
+  hs-source-dirs: haskell
+  c-sources:      haskell/Kryptoradio/Core/serial.c
+  main-is:        Kryptoradio/Core/Broadcaster.hs
   build-depends:
     base >= 4.2.0.2,
     blaze-builder >= 0.3.3.2,

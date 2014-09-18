@@ -1,4 +1,4 @@
-module Serialization where
+module Kryptoradio.Core.Serialization where
 
 import Control.Monad (forever)
 import Control.Monad.STM
@@ -10,8 +10,8 @@ import Data.Functor
 import Data.Word
 import Data.Int
 import System.IO (Handle,hFlush)
-import SyncTimer
-import Resources (Content,Delivery(..))
+import Kryptoradio.Core.SyncTimer
+import Kryptoradio.Core.Resources (Content,Delivery(..))
 
 data ReadResult = Empty | Sync Integer | Packet (Word8,Content)
 

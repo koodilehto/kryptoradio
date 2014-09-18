@@ -1,5 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Serial (openSerialOutRaw) where
+module Kryptoradio.Core.Serial (openSerialOutRaw) where
 
 import Foreign.C
 import System.IO

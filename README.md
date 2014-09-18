@@ -23,11 +23,23 @@ Email us for more information: <kryptoradio@koodilehto.fi>
 
 ## Compiling
 
-TODO will we written after heavy reorganization
+To compile Haskell components, install the environment first:
+
+    sudo apt-get install cabal-install
+	cabal update
+
+**TODO** Install all packages available from Debian so it makes the
+installation more robust.
+
+Then installing Kryptoradio:
+
+    cabal install
+
+For information about the Bitcoin part, see subdirectory `bitcoin/`.
 
 ## Running
 
-TODO will we written after heavy reorganization
+TODO will we written after heavy reorganization is complete.
 
 ## License
 
