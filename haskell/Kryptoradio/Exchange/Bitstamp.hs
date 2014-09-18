@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 -- |Connects and parses Bitstamp exchange feed
-module Bitstamp (bitstamp) where
+module Kryptoradio.Exchange.Bitstamp (bitstamp) where
 
 import Control.Applicative
 import Control.Monad
@@ -8,8 +8,8 @@ import Control.Concurrent.STM.TChan
 import Data.Text (Text)
 import Data.Aeson
 import Data.Aeson.Types
-import Pusher
-import Exchange
+import Kryptoradio.Exchange.Pusher
+import Kryptoradio.Exchange.Exchange
 
 -- |Subscriptions to Bitstamp live order book and trade stream
 subs :: [Text]

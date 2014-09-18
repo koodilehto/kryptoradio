@@ -1,5 +1,5 @@
 -- |Common functions between exchanges
-module Exchange where
+module Kryptoradio.Exchange.Exchange where
 
 data Kind = Bid | Trade | Ask | Rate deriving (Show,Ord,Eq)
 

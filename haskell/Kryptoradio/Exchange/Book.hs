@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 -- |Order book and trade history tools
-module Book where
+module Main where
 
 import Control.Exception
 import Control.Concurrent (forkFinally)
@@ -11,9 +11,9 @@ import Control.Monad (forever)
 import Data.List (intercalate)
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
-import Bitstamp
-import BitPay
-import Exchange
+import Kryptoradio.Exchange.Bitstamp
+import Kryptoradio.Exchange.BitPay
+import Kryptoradio.Exchange.Exchange
 
 -- |Do something if a thread dies.
 bomb :: (a -> c) -> Either SomeException b -> c

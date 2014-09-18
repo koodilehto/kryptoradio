@@ -1,14 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- |Handles Websocket connection to Pusher and parses its messages
-module Pusher (Pusher(..),connectPusher) where
+module Kryptoradio.Exchange.Pusher (Pusher(..),connectPusher) where
 
 import Control.Applicative
 import Control.Concurrent.STM.TChan
 import Control.Monad (forever,mzero)
 import Control.Monad.STM
 import Data.Aeson
+import Data.Aeson.Types (Parser)
 import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 import Network.WebSockets (ClientApp,Connection,sendTextData,runClient,receiveData)
 
 data Pusher = Pusher { event   :: Text
@@ -21,9 +23,14 @@ type Conv a = (Pusher -> Maybe a)
 instance FromJSON Pusher where
   parseJSON (Object v) = Pusher <$>
                          v .: "event" <*>
-                         (v .: "data" >>= either fail return . eitherDecode') <*>
+                         (v .: "data" >>= nestedJson) <*>
                          v .:? "channel" .!= ""
   parseJSON _ = mzero
+
+-- |Parser for nested JSON. That is a JSON encoded value in a JSON
+-- string. Pusher likes them, we don't, but here's a parser for them.
+nestedJson :: (FromJSON a) => Text -> Parser a
+nestedJson = either fail return . eitherDecodeStrict' . encodeUtf8
 
 app :: TChan a -> [ByteString] -> Conv a -> ClientApp ()
 app chan subs f conn = do
