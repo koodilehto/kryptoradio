@@ -26,7 +26,7 @@ getRates :: IO [BpRate]
 getRates = curlAesonGet "https://bitpay.com/api/rates"
 
 rateToEntry :: BpRate -> (Key,Double)
-rateToEntry BpRate{..} = (Key Rate 0 code "BITPAY",rate)
+rateToEntry BpRate{..} = (Key Rate 0 code "XBT" "BITPAY",rate)
 
 bitpay :: TChan [Entry] -> IO ()
 bitpay chan = forever $ do

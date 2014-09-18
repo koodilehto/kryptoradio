@@ -78,9 +78,9 @@ fullFlush = M.filterWithKey f
 
 pairToCsv (Key{..},amount) =
   intercalate "," $ case (kind,amount) of
-    (Rate,_) -> [exchange,currency,"R",show amount]
-    (_,0)    -> [exchange,currency,kindStr,show price]
-    _        -> [exchange,currency,kindStr,show price,show amount]
+    (Rate,_) -> [exchange,security,currency,"R",show amount]
+    (_,0)    -> [exchange,security,currency,kindStr,show level]
+    _        -> [exchange,security,currency,kindStr,show level,show amount]
   where kindStr = case kind of
           Bid   -> "B"
           Ask   -> "A"

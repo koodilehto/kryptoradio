@@ -30,8 +30,8 @@ extract Pusher{..} = case (event,channel) of
     tradeParser (Object o) = do
       price <- o .: "price"
       amount <- o .: "amount"
-      return [(Key Trade price "USD" "BITSTAMP",amount)]
-    conv entry (price,amount) = (Key entry (read price) "USD" "BITSTAMP",read amount)
+      return [(Key Trade price "USD" "XBT" "BITSTAMP",amount)]
+    conv entry (price,amount) = (Key entry (read price) "USD" "XBT" "BITSTAMP",read amount)
 
 bitstamp :: TChan [Entry] -> IO ()
 bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs extract
