@@ -8,6 +8,7 @@ import Control.Concurrent.STM.TChan
 import Data.Text (Text)
 import Data.Aeson
 import Data.Aeson.Types
+import Data.Scientific (Scientific,fromFloatDigits)
 import Kryptoradio.Exchange.Pusher
 import Kryptoradio.Exchange.Exchange
 
@@ -28,10 +29,16 @@ extract Pusher{..} = case (event,channel) of
     orderParser _ = mzero
     -- Trades happen once at a time. Take it out and put inside singleton list
     tradeParser (Object o) = do
-      price <- o .: "price"
-      amount <- o .: "amount"
+      price <- fixScifi <$> o .: "price"
+      amount <- fixScifi <$> o .: "amount"
       return [(Key Trade price "USD" "XBT" "BITSTAMP",amount)]
     conv entry (price,amount) = (Key entry (read price) "USD" "XBT" "BITSTAMP",read amount)
 
 bitstamp :: TChan [Entry] -> IO ()
 bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs extract
+
+-- |This fixes issue with Bitstamp trade data. When read as double and
+-- then converted to Scientific, automatic error rounding takes
+-- place. Somewhat twisted, but works with current data.
+fixScifi :: Double -> Scientific
+fixScifi = fromFloatDigits
