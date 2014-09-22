@@ -66,7 +66,7 @@ app :: [Resource] -> SyncAct -> Application
 app res timer req respond = case (requestMethod req,pathResource $ pathInfo req,pathInfo req) of
   ("GET",Just name,_) -> respond $ text ok200 $ describe name
   ("GET",_,[])        -> respond $ text ok200 $ describeAll res
-  ("GET",_,[sync])    -> do
+  ("GET",_,["sync"])    -> do
     i <- atomically timer
     atomically $ waitSync timer i
     respond $ text ok200 "Sync"
