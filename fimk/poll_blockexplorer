@@ -4,6 +4,7 @@ PREV_ID=/blocks/1
 LAST_SENT_TX=
 RAW_HTML=`mktemp`
 RAW_OUT=`mktemp`
+RAW_CSV=`mktemp`
 RAW_ERR=`mktemp`
 
 clean () {
@@ -12,6 +13,7 @@ clean () {
     echo "Last fetched block was $PREV_ID"
     echo "HTML:        $RAW_HTML"
     echo "XSLT output: $RAW_OUT"
+    echo "CSV output:  $RAW_CSV"
     echo "XSLT error:  $RAW_ERR"
     exit
 }
@@ -25,6 +27,7 @@ fetch_once () {
 
     curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$URL" 
     xsltproc --novalid --html -o "$RAW_OUT" "$@" "$XSL" "$RAW_HTML" 2>$RAW_ERR
+    xsltproc --novalid --html -o "$RAW_CSV" csv.xsl "$RAW_OUT" 2>$RAW_ERR
 }
 
 fetch () {
@@ -39,7 +42,7 @@ fetch () {
 }
 
 send () {
-    curl -X PUT http://localhost:3000/fimk --data-binary "@$RAW_OUT"
+    curl -X PUT http://localhost:3000/fimk --data-binary "@$RAW_CSV"
 }
 
 trap clean EXIT INT
