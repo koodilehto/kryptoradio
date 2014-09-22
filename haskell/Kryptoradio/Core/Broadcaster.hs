@@ -87,7 +87,7 @@ app res timer failVar req respond = do
         Just isFullDelivery -> do
           -- All is fine, start sending
           delivery <- newTVarIO Waiting
-          packet <- lazyRequestBody req
+          packet <- strictRequestBody req
           atomically $ do
             old <- tryTakeTMVar (var r)
             -- If something is queued, report that we threw it away
