@@ -7,12 +7,13 @@ import Control.Concurrent.STM.TChan
 import Control.Monad (forever,mzero)
 import Control.Monad.STM
 import Data.Aeson
+import Data.Scientific (Scientific)
 import Network.Curl.Aeson
 import Kryptoradio.Exchange.Exchange
 
 data BpRate = BpRate { code :: String
                      , name :: String
-                     , rate :: Double
+                     , rate :: Scientific
                      } deriving (Show)
 
 instance FromJSON BpRate where
@@ -25,7 +26,7 @@ instance FromJSON BpRate where
 getRates :: IO [BpRate]
 getRates = curlAesonGet "https://bitpay.com/api/rates"
 
-rateToEntry :: BpRate -> (Key,Double)
+rateToEntry :: BpRate -> Entry
 rateToEntry BpRate{..} = (Key Rate 0 code "XBT" "BITPAY",rate)
 
 bitpay :: TChan [Entry] -> IO ()

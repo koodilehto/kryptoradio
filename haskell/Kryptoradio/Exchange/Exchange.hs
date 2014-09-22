@@ -1,14 +1,14 @@
 -- |Common functions between exchanges
 module Kryptoradio.Exchange.Exchange where
 
+import Data.Scientific
+
 data Kind = Bid   -- ^ Buying order
           | Trade -- ^ Completed trade
           | Ask   -- ^ Selling order
           | Rate  -- ^ Rate is used instead of trade when not
                   -- broadcasting full order book
           deriving (Show,Ord,Eq)
-
--- TODO change Doubles to Scientific.
 
 data Key = Key { kind     :: Kind   -- ^ Record type
                , level    :: Double -- ^ Security price level in that
@@ -18,4 +18,4 @@ data Key = Key { kind     :: Kind   -- ^ Record type
                , exchange :: String -- ^ Exchange name
                } deriving (Show,Ord,Eq)
 
-type Entry = (Key,Double)
+type Entry = (Key,Scientific)

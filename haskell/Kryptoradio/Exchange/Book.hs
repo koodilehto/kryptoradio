@@ -10,12 +10,14 @@ import Control.Monad.STM
 import Control.Monad (forever)
 import Data.List (intercalate)
 import Data.Map.Lazy (Map)
+import Data.Scientific
 import qualified Data.Map.Lazy as M
 import Network.Curl
 import System.Console.CmdArgs.Implicit hiding (name)
 import Kryptoradio.Exchange.Bitstamp
 import Kryptoradio.Exchange.BitPay
 import Kryptoradio.Exchange.Exchange
+import Kryptoradio.Exchange.ScifiTools
 
 -- |Do something if a thread dies.
 bomb :: (a -> c) -> Either SomeException b -> c
@@ -56,7 +58,7 @@ main = do
 
 -- Updates order book to Kryptoradio core and mark it as sent if it
 -- was successful (= not replaced)
-updateBook :: String -> TVar (Map Key Double) -> Map Key Double -> IO ()
+updateBook :: String -> TVar (Map Key Scientific) -> Map Key Scientific -> IO ()
 updateBook url sentVar new = do
   -- Deciding what to send. Not perfectly threads safe but will work
   -- most of the time.
@@ -70,7 +72,7 @@ updateBook url sentVar new = do
       putStrLn "Updated"
     _ -> putStrLn "Discarded"
 
-orderbook :: TChan [Entry] -> TVar (Map Key Double) -> IO ()
+orderbook :: TChan [Entry] -> TVar (Map Key Scientific) -> IO ()
 orderbook ch book = forever $ atomically $ do
   xs <- readTChan ch
   orig <- readTVar book
@@ -81,7 +83,7 @@ orderbook ch book = forever $ atomically $ do
           (Ask,0)   -> M.delete key
           _         -> M.insert key value
 
-bookDiff :: Map Key Double -> Map Key Double -> Map Key Double
+bookDiff :: Map Key Scientific -> Map Key Scientific -> Map Key Scientific
 bookDiff = M.mergeWithKey common onlyInOld onlyInNew
   where
     -- If a value is in both old and new
@@ -104,9 +106,9 @@ fullFlush = M.filterWithKey f
 
 pairToCsv (Key{..},amount) =
   intercalate "," $ case (kind,amount) of
-    (Rate,_) -> [exchange,security,currency,"R",show amount]
+    (Rate,_) -> [exchange,security,currency,"R",compactShow amount]
     (_,0)    -> [exchange,security,currency,kindStr,show level]
-    _        -> [exchange,security,currency,kindStr,show level,show amount]
+    _        -> [exchange,security,currency,kindStr,show level,compactShow amount]
   where kindStr = case kind of
           Bid   -> "B"
           Ask   -> "A"
