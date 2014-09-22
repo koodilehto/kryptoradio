@@ -11,8 +11,8 @@ data Kind = Bid   -- ^ Buying order
           deriving (Show,Ord,Eq)
 
 data Key = Key { kind     :: Kind   -- ^ Record type
-               , level    :: Double -- ^ Security price level in that
-                                    -- currency. (Zero in case of Rate).
+               , level    :: Scientific -- ^ Security price level in that
+                                        -- currency. (Zero in case of Rate).
                , currency :: String -- ^ Currency used in prices
                , security :: String -- ^ Security, like Bitcoin
                , exchange :: String -- ^ Exchange name
