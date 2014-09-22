@@ -1,9 +1,9 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable, RecordWildCards #-}
 -- |Order book and trade history tools
 module Main where
 
 import Control.Exception
-import Control.Concurrent (forkFinally)
+import Control.Concurrent (forkFinally, forkIO)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad.STM
@@ -11,6 +11,8 @@ import Control.Monad (forever)
 import Data.List (intercalate)
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
+import Network.Curl
+import System.Console.CmdArgs.Implicit hiding (name)
 import Kryptoradio.Exchange.Bitstamp
 import Kryptoradio.Exchange.BitPay
 import Kryptoradio.Exchange.Exchange
@@ -19,30 +21,54 @@ import Kryptoradio.Exchange.Exchange
 bomb :: (a -> c) -> Either SomeException b -> c
 bomb act = act . either throw (const $ error "Thread died")
 
+defUrl = "http://localhost:3000/exchange"
+
+data Args = Args { url    :: String
+                 } deriving (Show, Data, Typeable)
+
+synopsis = Args { url = defUrl &= help ("Kryptoradio Core URL (default: "++
+                                        defUrl++")")
+                }
+           &= program "kryptoradio-exchange"
+           &= summary "Kryptoradio Exchange Information v0.0.1"
+           &= help "Connects to BitPay for exchange rates and Bitstamp for \
+                   \order book. Sends data to Kryptoradio Core at given URL"
+
 main = do
+  Args{..} <- cmdArgs synopsis
   ch <- newTChanIO
   book <- newTVarIO M.empty
+  sentBook <- newTVarIO M.empty
   -- safefork makes sure that the exception is listened on the main loop
   let safeFork a = forkFinally a $ bomb $ atomically.writeTVar book
   safeFork $ bitstamp ch
   safeFork $ bitpay ch
   safeFork $ orderbook ch book
-  loop book M.empty
-  where loop book old = do
-          waitNew book old
-          c <- getChar
-          putStr "\r"
-          case c of
-            'f'  -> do
-              putStrLn "Next will be full flush"
-              loop book $ fullFlush old
-            '\n' -> do
-              new <- readTVarIO book
-              putStr $ unlines $ map pairToCsv $ M.toList $ bookDiff old new
-              loop book new
-            _ -> do
-              putStrLn "Unknown command"
-              loop book old
+  -- Loop for changes in order book and fork updater for it
+  let loop old = do
+        waitNew book old
+        -- New data, trying to send it
+        new <- readTVarIO book
+        forkIO $ updateBook url sentBook new
+        -- Not interested if it fails or not
+        loop new
+    in loop M.empty
+
+-- Updates order book to Kryptoradio core and mark it as sent if it
+-- was successful (= not replaced)
+updateBook :: String -> TVar (Map Key Double) -> Map Key Double -> IO ()
+updateBook url sentVar new = do
+  -- Deciding what to send. Not perfectly threads safe but will work
+  -- most of the time.
+  sent <- readTVarIO sentVar
+  let newStuff = unlines $ map pairToCsv $ M.toList $ bookDiff sent new
+  (status,_) <- curlGetString url
+                [CurlCustomRequest "PUT",CurlPostFields [newStuff]]
+  case status of
+    CurlOK -> do
+      atomically $ writeTVar sentVar new
+      putStrLn "Updated"
+    _ -> putStrLn "Discarded"
 
 orderbook :: TChan [Entry] -> TVar (Map Key Double) -> IO ()
 orderbook ch book = forever $ atomically $ do
