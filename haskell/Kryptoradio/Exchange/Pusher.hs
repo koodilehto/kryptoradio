@@ -12,6 +12,7 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Network.WebSockets (ClientApp,Connection,sendTextData,runClient,receiveData)
+import Kryptoradio.Exchange.Retry
 
 data Pusher = Pusher { event   :: Text
                      , payload :: Value
@@ -46,10 +47,10 @@ app chan subs f conn = do
         Just x  -> atomically $ writeTChan chan x
 
 connectPusher :: String -> Int -> String -> [Text] -> Conv a -> TChan a -> IO ()
-connectPusher host port appKey chans f chan = do
-  runClient host port path $ app chan subs f
+connectPusher host port appKey chans f chan = foreverRetry worker printException
   where subs = map channelToSubs chans
         path = "/app/" ++ appKey ++ "?protocol=7"
+        worker = runClient host port path $ app chan subs f
 
 channelToSubs :: Text -> ByteString
 channelToSubs chan =
