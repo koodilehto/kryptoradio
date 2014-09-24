@@ -16,7 +16,7 @@ source-repository head
 
 executable kryptoradio-broadcast
   hs-source-dirs: haskell
-  c-sources:      haskell/Kryptoradio/Core/serial.c
+  c-sources:      c/serial.c
   main-is:        Kryptoradio/Core/Broadcaster.hs
   build-depends:
     base >= 4.2.0.2,
@@ -45,3 +45,11 @@ executable kryptoradio-exchange
     scientific >= 0.2.0.2,
     time >= 1.4.0.1,
     websockets >= 0.8.1.1
+
+executable kryptoradio-receiver
+  hs-source-dirs: haskell
+  c-sources:      c/dvblib/dvblib.c
+  main-is:        Kryptoradio/Receiver/Main.hs
+  ghc-options:    -threaded 
+  build-depends:
+    base >= 4.2.0.2
