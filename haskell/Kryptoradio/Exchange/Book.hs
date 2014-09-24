@@ -9,9 +9,9 @@ import Control.Concurrent.STM.TVar
 import Control.Monad.STM
 import Control.Monad (forever)
 import Data.List (intercalate)
-import Data.Map.Lazy (Map)
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Scientific
-import qualified Data.Map.Lazy as M
 import Network.Curl
 import System.Console.CmdArgs.Implicit hiding (name)
 import Kryptoradio.Exchange.Bitstamp
