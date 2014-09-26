@@ -50,6 +50,7 @@ executable kryptoradio-receiver
   hs-source-dirs: haskell
   c-sources:      c/dvblib/dvblib.c
   main-is:        Kryptoradio/Receiver/Main.hs
-  ghc-options:    -threaded 
   build-depends:
-    base >= 4.2.0.2
+    base >= 4.2.0.2,
+    attoparsec >= 0.10.4.0,
+    attoparsec-binary >= 0.2
