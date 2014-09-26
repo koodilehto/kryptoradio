@@ -23,6 +23,14 @@ const char* dvb_get_error(dvb_device *dev) {
     return dev->error;
 }
 
+dvb_device *new_dvb_device(void) {
+    return malloc(sizeof(dvb_device));
+}
+
+int dvb_get_demuxer_fd(dvb_device *dev) {
+    return dev->fd_demuxer;
+}
+
 int dvb_open(dvb_device *dev, int dev_id, int frontend_id, int demuxer_id) {
     struct dvb_frontend_info info;
     char name_frontend[32];

@@ -45,6 +45,23 @@ typedef struct {
     int type; ///< Device type (se DVB_TYPE)
 } dvb_device;
 
+
+/*! \brief Allocates memory for dvb_device
+ * 
+ * This is just a malloc wrapper which makes it easier to make FFI bindings. 
+ *
+ * \return Allocated data
+ */
+dvb_device *new_dvb_device(void);
+
+/*! \brief Returns file descriptor to demuxer
+ * 
+ * This just returns the file descriptor from struct to make it easier to make FFI bindings. 
+ *
+ * \return File descriptor of demuxer
+ */
+int dvb_get_demuxer_fd(dvb_device *dev);
+
 /*! \brief Opens a DVB device for operations
  * 
  * This function opens a DVB device for reading and writing. Both the frontend
