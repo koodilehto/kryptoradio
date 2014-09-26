@@ -21,6 +21,10 @@ longer description.
 
 Email us for more information: <kryptoradio@koodilehto.fi>
 
+## How to just hex dump the traffic
+
+While the receiver tool is still under development there is a hex dumper tool available in the source tree directory [scripts/dump/](https://github.com/koodilehto/kryptoradio/tree/master/scripts/dump). Happy hacking!
+
 ## Compiling
 
 To compile Haskell components, install the environment first:
