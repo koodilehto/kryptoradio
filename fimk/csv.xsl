@@ -11,7 +11,7 @@
   </xsl:template>
 
   <!-- Table cells and lists are mapped into CSV fields (comma separated) -->
-  <xsl:template match="td[not(position() = last())]|li[not(position() = last())]">
+  <xsl:template match="th[not(position() = last())]|td[not(position() = last())]|li[not(position() = last())]">
     <xsl:apply-templates />
     <xsl:text>,</xsl:text>
   </xsl:template>
