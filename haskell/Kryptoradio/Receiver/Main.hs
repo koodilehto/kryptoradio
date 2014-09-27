@@ -14,9 +14,8 @@ main = do
   chan <- newTChanIO
   -- FIXME if using threaded runtime the handle has extremely high
   -- latency (minutes) when run inside forkIO
-  forkIO $ pesToChan h chan
+  forkIO $ krpToChan h chan
   forever $ do
-    putStr "Kryptoradio packet: "
     bs <- atomically $ readTChan chan
     print bs
   closeDvb dvb
