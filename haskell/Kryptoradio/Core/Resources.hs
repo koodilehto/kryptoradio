@@ -70,7 +70,7 @@ buildResource Resource{..} = word8 rid <>
 
 -- |Outputs Kryptoradio sync packet
 syncPacket :: [Resource] -> ByteString
-syncPacket = toLazyByteString . foldr (mappend.buildResource) (nul <> nul)
+syncPacket = toLazyByteString . foldr (mappend.buildResource) mempty
 
 -- |C style string: encoded in UTF-8 and terminated by null byte (\0)
 cString :: Text -> Builder
