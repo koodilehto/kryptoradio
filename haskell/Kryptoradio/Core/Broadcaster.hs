@@ -60,7 +60,7 @@ main = do
   (serialClose,writeSerial) <- if mock
                                then openMockSerialOut device baud
                                else openSerialOutRaw device baud
-  forkFinally (serializator timer (priorityTake res) writeSerial)
+  forkFinally (serializator timer (priorityTake res) writeSerial (syncPacket res))
     (storeError failVar)
   putStrLn $ "Binding to " ++ show (getHost set) ++ ", port " ++ show (getPort set)
   runSettings set $ app res timer failVar

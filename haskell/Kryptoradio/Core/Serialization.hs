@@ -15,8 +15,8 @@ import Kryptoradio.Core.Resources (Content,Delivery(..))
 
 data ReadResult = Empty | Sync Integer | Packet (Word8,Content)
 
-serializator :: SyncAct -> STM (Word8,Content) -> (ByteString -> IO ()) -> IO ()
-serializator timer reader writeSerial = serializator' 0 0
+serializator :: SyncAct -> STM (Word8,Content) -> (ByteString -> IO ()) -> ByteString -> IO ()
+serializator timer reader writeSerial syncPacket = serializator' 0 0
   where
     serializator' pad i = do
       -- Get new data. If we have a fragment in buffer, do not wait for
@@ -25,7 +25,7 @@ serializator timer reader writeSerial = serializator' 0 0
 
       let (report,bs) = case incoming of
             Empty -> (skip,trail) -- Pad everything
-            Sync _ -> (skip,trail `B.append` syncPacket)
+            Sync _ -> (skip,trail `B.append` syncHeader `B.append` toKRFs 2 syncPacket)
             Packet (rid,(delivery,msg)) ->
               (atomically.writeTVar delivery,toKRFs pad $ rid `B.cons` msg)
 
@@ -60,6 +60,6 @@ toKRFs pos bs = if B.null next
 klpSize :: Int64
 klpSize = 178
 
--- |Sync packet contains sync indicator and protocol version
-syncPacket :: ByteString
-syncPacket = B.pack [0x00,0x00]
+-- |Sync header contains sync indicator and protocol version
+syncHeader :: ByteString
+syncHeader = B.pack [0x00,0x00]
