@@ -79,6 +79,11 @@ app var req respond = do
       object ["name" .= ("Kryptoradio DVB-T receiver" :: Text)
              ,"synced" .= not(null resources)
              ]
+    ("GET",["api","waitsync"]) -> do
+      atomically $ do
+        x <- readTVar var
+        when (null x) retry
+      respond $ jsonData ok200 True
     ("GET",["api","resources"]) ->
       respond $ jsonData ok200 $ map resourceToValue resources
     ("GET",["api","resource",res,fmt]) -> do
