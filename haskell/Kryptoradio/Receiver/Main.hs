@@ -2,10 +2,11 @@
 module Main where
 
 import Control.Monad
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as B
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan (readTChan,newTChanIO)
+import System.IO (stdout) -- temp
 import Kryptoradio.Receiver.Dvb
 import Kryptoradio.Receiver.Parser
 import Kryptoradio.Receiver.Resources
@@ -17,14 +18,16 @@ main = do
   -- FIXME if using threaded runtime the handle has extremely high
   -- latency (minutes) when run inside forkIO
   forkIO $ krpToChan h resVar
-  let loop old = do
-        new <- atomically $ do
-          res <- readTVar resVar
-          let new = map resourceToText res
-          if (new == old) then retry else return new
-        print new
-        loop new
-  loop [""]
+  putStrLn "Waiting sync"
+  res <- atomically $ do
+    res <- readTVar resVar
+    if (null res) then retry else return res
+  putStrLn $ "Got first sync. Resources: " ++ (show $ map resourceToText res)
+  let broadcastChan = var (res !! 2)
+  chan <- atomically $ dupTChan broadcastChan
+  forever $ do
+    m <- atomically $ readTChan chan
+    B.hPut stdout m
   closeDvb dvb
 
-resourceToText Resource{..} = show (rid,name,desc)
+resourceToText Resource{..} = (rid,name,desc)
