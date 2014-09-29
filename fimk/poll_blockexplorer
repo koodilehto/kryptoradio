@@ -27,7 +27,7 @@ fetch_once () {
 
     curl -sfm 30 -o "$RAW_HTML" "http://80.240.143.139/$URL" 
     xsltproc --novalid --html -o "$RAW_OUT" "$@" "$XSL" "$RAW_HTML" 2>$RAW_ERR
-    xsltproc --novalid --html -o "$RAW_CSV" csv.xsl "$RAW_OUT" 2>$RAW_ERR
+    xsltproc --novalid --html csv.xsl "$RAW_OUT" | head -c -1 >"$RAW_CSV" 2>$RAW_ERR
 }
 
 fetch () {
