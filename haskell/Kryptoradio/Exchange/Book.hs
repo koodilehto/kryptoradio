@@ -63,7 +63,7 @@ updateBook url sentVar new = do
   -- Deciding what to send. Not perfectly threads safe but will work
   -- most of the time.
   sent <- readTVarIO sentVar
-  let newStuff = unlines $ map pairToCsv $ M.toList $ bookDiff sent new
+  let newStuff = unlines' $ map pairToCsv $ M.toList $ bookDiff sent new
   (status,_) <- curlGetString url
                 [CurlCustomRequest "PUT",CurlPostFields [newStuff]]
   case status of
@@ -120,4 +120,7 @@ waitNew var old = do
     new <- readTVar var
     check $ old /= new
   putStrLn "New data available"
-  
+
+-- |Like `unlines` but doesn't put newline after last element.
+unlines' :: [String] -> String
+unlines' = intercalate "\n"
