@@ -1,21 +1,24 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, RecordWildCards #-}
 module Main where
 
-import Blaze.ByteString.Builder.ByteString
-import Blaze.ByteString.Builder.Word
+import Blaze.ByteString.Builder
+import Blaze.ByteString.Builder.Char8 (fromString)
 import Control.Monad
-import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as BS
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan (readTChan,newTChanIO)
 import Data.Aeson
-import Data.String (fromString)
+import qualified Data.String as S
 import Data.Text (Text)
+import Data.Monoid
+import Data.Word
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
-import System.IO (stdout) -- temp
+import Text.Printf
 import Kryptoradio.Receiver.Dvb
 import Kryptoradio.Receiver.Parser
 import Kryptoradio.Receiver.Resources
@@ -49,7 +52,7 @@ synopsis = Args { device = 0 &= help "DVB device id (default: 0)"
 
 main = do
   Args{..} <- cmdArgs synopsis
-  let set = setHost (fromString host) $
+  let set = setHost (S.fromString host) $
             setPort port $
             defaultSettings
   putStrLn $ "Tuning to " ++ show (fromIntegral freq / 1e6) ++ "MHz, PID " ++ show pid
@@ -81,14 +84,45 @@ app var req respond = do
                    object ["error" .= ("Resource not found" :: Text)]
         Just bchan -> do
           chan <- atomically $ dupTChan bchan
-          respond $ responseStream status200 rawHeader $ \write flush -> forever $ do
-            x <- atomically $ readTChan chan
-            write $ fromWord32be $ fromIntegral $ B.length x
-            write $ fromLazyByteString x
-            flush
+          respond $ case fmt of
+            "raw" -> rawStream chan
+            "json" -> jsonStream chan
+            _ -> jsonData badRequest400 $
+                 object ["error" .= ("Unknown format" :: Text)]
+
+-- |Outputs binary data stream. Data consists of variable-sized
+-- chunks, in which the first 4 bytes contain chunk length in big
+-- endian format and it is followed by the data of that chunk.
+rawStream :: TChan B.ByteString -> Response
+rawStream chan = responseStream status200 rawHeader $ \write flush -> forever $ do
+  x <- atomically $ readTChan chan
+  write $ fromWord32be $ fromIntegral $ B.length x
+  write $ fromLazyByteString x
+  flush
+
+-- |Output JSON stream of (8-bit string data in quotes, properly
+-- escaped). Useful for Streaming JSON loading in JavaScript.
+jsonStream :: TChan B.ByteString -> Response
+jsonStream chan = responseStream status200 jsonHeader $ \write flush -> forever $ do
+  write $ fromByteString "[\""
+  flush
+  forever $ do
+    x <- atomically $ readTChan chan
+    write $ B.foldl escape mempty x <> quote
+    flush
+  where quote = fromByteString "\",\""
+
+-- |Escapes given byte using JSON escaping rules (which are a bit
+-- ambiguous but I assume they're same as in ASCII). This is done
+-- manually instead of aeson library because they have dropped
+-- ByteString serialization support.
+escape :: Builder -> Word8 -> Builder
+escape acc byte | byte < 32 || byte > 126 = acc <> (fromString $ printf "\\u%04x" byte)
+                | otherwise               = acc <> (fromByteString $ BS.singleton byte)
 
 resourceToValue Resource{..} = object ["rid" .= rid, "name" .= name, "desc" .= desc]
 
-jsonData code = responseLBS code [("Content-Type", "application/json")] . encode
+jsonData code = responseLBS code jsonHeader . encode
 
 rawHeader = [("Content-Type", "application/octet-stream")]
+jsonHeader = [("Content-Type", "application/json")]
