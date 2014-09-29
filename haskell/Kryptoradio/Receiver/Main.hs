@@ -12,12 +12,15 @@ import Control.Concurrent.STM.TChan (readTChan,newTChanIO)
 import Data.Aeson
 import qualified Data.String as S
 import Data.Text (Text)
+import qualified Data.Text.Lazy as T
+import qualified Data.Text.Lazy.Encoding as T
 import Data.Monoid
 import Data.Word
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
+import Text.CSV
 import Text.Printf
 import Kryptoradio.Receiver.Dvb
 import Kryptoradio.Receiver.Parser
@@ -87,6 +90,7 @@ app var req respond = do
           respond $ case fmt of
             "raw" -> rawStream chan
             "json" -> jsonStream chan
+            "jsoncsv" -> jsonCsvStream chan
             _ -> jsonData badRequest400 $
                  object ["error" .= ("Unknown format" :: Text)]
 
@@ -111,6 +115,21 @@ jsonStream chan = responseStream status200 jsonHeader $ \write flush -> forever 
     write $ B.foldl escape mempty x <> quote
     flush
   where quote = fromByteString "\",\""
+
+-- |Output JSON stream of values encoded in CSV. Only some resources
+-- use CSV formatting so this may result weird results if used with
+-- binary data. Input is assumed to be encoded in UTF-8.
+jsonCsvStream :: TChan B.ByteString -> Response
+jsonCsvStream chan = responseStream status200 jsonHeader $ \write flush -> forever $ do
+  write $ fromByteString "["
+  flush
+  forever $ do
+    x <- atomically $ readTChan chan
+    write $ fromLazyByteString $ case parseCSV "" $ T.unpack $ T.decodeUtf8 x of
+      Left e -> encode $ object ["error" .= ("Unable to parse: " ++ show e)]
+      Right x -> encode x
+    write $ fromByteString ","
+    flush
 
 -- |Escapes given byte using JSON escaping rules (which are a bit
 -- ambiguous but I assume they're same as in ASCII). This is done

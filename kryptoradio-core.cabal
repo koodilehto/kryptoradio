@@ -52,6 +52,7 @@ executable kryptoradio-receiver
   main-is:        Kryptoradio/Receiver/Main.hs
   build-depends:
     base >= 4.2.0.2,
+    csv >= 0.1.2,
     attoparsec >= 0.10.4.0,
     attoparsec-binary >= 0.2,
     wai >= 3.0.1.1,
