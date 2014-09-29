@@ -53,4 +53,6 @@ executable kryptoradio-receiver
   build-depends:
     base >= 4.2.0.2,
     attoparsec >= 0.10.4.0,
-    attoparsec-binary >= 0.2
+    attoparsec-binary >= 0.2,
+    wai >= 3.0.1.1,
+    warp >= 3.0.0.5
