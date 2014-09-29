@@ -29,21 +29,41 @@ While the receiver tool is still under development there is a hex dumper tool av
 
 To compile Haskell components, install the environment first:
 
-    sudo apt-get install cabal-install
+    sudo apt-get install cabal-install libghc-csv-dev libghc-curl-dev libghc-cmdargs-dev libghc-blaze-builder-dev
 	cabal update
 
-**TODO** Install all packages available from Debian so it makes the
-installation more robust.
+Not all packages can be found on Debian / Ubuntu or they are too old. In future this will be easier. So installing the remaining packages via Cabal.
 
-Then installing Kryptoradio:
+Then install Kryptoradio. This will fetch and compile remaining dependencies as well:
 
     cabal install
 
-For information about the Bitcoin part, see subdirectory `bitcoin/`.
-
 ## Running
 
-TODO will we written after heavy reorganization is complete.
+How to run the receiver at 634 MHz:
+
+    ~/.cabal/bin/kryptoradio-receiver 634000000
+
+You can add Cabal binary directory to your PATH to make running it easier. By default it listens to TCP port 3000. See more usage instructions with `kryptoradio-receiver --help`. To find your frequency, you can use this table: http://kryptoradio.koodilehto.fi/media/transmitters
+
+The following entry points are available:
+
+* /api
+* /api/waitsync
+* /api/resources
+* /api/resource/NAME/raw
+* /api/resource/NAME/json
+* /api/resource/NAME/jsoncsv
+
+To listen to currency exchange information, try this:
+
+    curl -N http://localhost:3000/api/resource/exchange/jsoncsv
+	
+Sync happens every 60 seconds so you may need wait at most one minute
+after starting the receiver before the resource is available. You can
+use /api/waitsync to wait for the first sync to happen.
+
+For information about the Bitcoin part, see subdirectory `bitcoin/`.
 
 ## License
 
