@@ -1,12 +1,17 @@
-{-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable, RecordWildCards #-}
 module Main where
 
+import Blaze.ByteString.Builder.ByteString
+import Blaze.ByteString.Builder.Word
 import Control.Monad
 import qualified Data.ByteString.Lazy.Char8 as B
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan (readTChan,newTChanIO)
+import Data.Aeson
 import Data.String (fromString)
+import Data.Text (Text)
+import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
@@ -54,16 +59,36 @@ main = do
   -- FIXME if using threaded runtime the handle has extremely high
   -- latency (minutes) when run inside forkIO
   forkIO $ krpToChan h resVar
-  putStrLn "Waiting sync"
-  res <- atomically $ do
-    res <- readTVar resVar
-    if (null res) then retry else return res
-  putStrLn $ "Got first sync. Resources: " ++ (show $ map resourceToText res)
-  let broadcastChan = var (res !! 2)
-  chan <- atomically $ dupTChan broadcastChan
-  forever $ do
-    m <- atomically $ readTChan chan
-    B.hPut stdout m
+  -- Ready to serve
+  runSettings set $ app resVar
   closeDvb dvb
 
-resourceToText Resource{..} = (rid,name,desc)
+app :: TVar [Resource] -> Application
+app var req respond = do
+  resources <- readTVarIO var
+  let byName = flip lookup $ map (\Resource{..} -> (name,var)) resources
+  case (requestMethod req,pathInfo req) of
+    ("GET",["api"]) ->
+      respond $ jsonData ok200 $
+      object ["name" .= ("Kryptoradio DVB-T receiver" :: Text)
+             ,"synced" .= not(null resources)
+             ]
+    ("GET",["api","resources"]) ->
+      respond $ jsonData ok200 $ map resourceToValue resources
+    ("GET",["api","resource",res,fmt]) -> do
+      case byName res of
+        Nothing -> respond $ jsonData notFound404 $
+                   object ["error" .= ("Resource not found" :: Text)]
+        Just bchan -> do
+          chan <- atomically $ dupTChan bchan
+          respond $ responseStream status200 rawHeader $ \write flush -> forever $ do
+            x <- atomically $ readTChan chan
+            write $ fromWord32be $ fromIntegral $ B.length x
+            write $ fromLazyByteString x
+            flush
+
+resourceToValue Resource{..} = object ["rid" .= rid, "name" .= name, "desc" .= desc]
+
+jsonData code = responseLBS code [("Content-Type", "application/json")] . encode
+
+rawHeader = [("Content-Type", "application/octet-stream")]
