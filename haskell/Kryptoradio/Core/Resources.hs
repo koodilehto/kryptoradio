@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards, TupleSections #-}
 module Kryptoradio.Core.Resources where
 
+import Blaze.ByteString.Builder
 import Data.ByteString.Lazy.Char8 (ByteString,pack)
-import Data.ByteString.Lazy.Builder
 import Data.Text (Text,unpack)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Monoid
@@ -64,7 +64,7 @@ describeAll x = pack $
 
 
 buildResource :: Resource -> Builder
-buildResource Resource{..} = word8 rid <>
+buildResource Resource{..} = fromWord8 rid <>
                              cString name <>
                              cString desc
 
@@ -74,10 +74,10 @@ syncPacket = toLazyByteString . foldr (mappend.buildResource) mempty
 
 -- |C style string: encoded in UTF-8 and terminated by null byte (\0)
 cString :: Text -> Builder
-cString x = (byteString $ encodeUtf8 x) <> nul
+cString x = (fromByteString $ encodeUtf8 x) <> nul
 
 nul :: Builder
-nul = word8 0
+nul = fromWord8 0
 
 showText :: Text -> ShowS
 showText = showString . unpack
