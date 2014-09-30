@@ -29,7 +29,7 @@ While the receiver tool is still under development there is a hex dumper tool av
 
 To compile Haskell components, install the environment first:
 
-    sudo apt-get install cabal-install libghc-csv-dev libghc-curl-dev libghc-cmdargs-dev libghc-blaze-builder-dev
+    sudo apt-get install cabal-install libghc-csv-dev libghc-curl-dev libghc-cmdargs-dev libghc-blaze-builder-dev libghc-http-types-dev libghc-stm-dev libghc-text-dev
 	cabal update
 
 Not all packages can be found on Debian / Ubuntu or they are too old. In future this will be easier. So installing the remaining packages via Cabal.
