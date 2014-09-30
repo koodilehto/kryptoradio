@@ -19,16 +19,16 @@ executable kryptoradio-receiver
   c-sources:      dvblib/dvblib.c
   main-is:        Main.hs
   build-depends:
-    aeson >= 0.7.0.3,
-    attoparsec >= 0.10.4.0,
+    aeson >= 0.6.2.1,
+    attoparsec >= 0.10.1.1,
     attoparsec-binary >= 0.2,
-    base >= 4.2.0.2,
+    base >= 4.5.0.0,
     blaze-builder >= 0.3.1.0,
     bytestring >= 0.9.2.1,
     cmdargs >= 0.9.5,
     csv >= 0.1.2,
-    http-types >= 0.8.3,
-    stm >= 2.3,
+    http-types >= 0.6.11,
+    stm >= 2.4,
     text >= 0.11.2.0,
     unix >= 2.5.1.0,
     wai >= 3.0.1.1,

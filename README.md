@@ -25,18 +25,34 @@ Email us for more information: <kryptoradio@koodilehto.fi>
 
 While the receiver tool is still under development there is a hex dumper tool available in the source tree directory [scripts/dump/](https://github.com/koodilehto/kryptoradio/tree/master/scripts/dump). Happy hacking!
 
-## Compiling
+## Compiling receiver
 
-To compile Haskell components, install the environment first:
+The following instructions are for users of Debian and Ubuntu. If you
+use another platform, you are on your own. In that case please send me
+a pull request of installation instructions for that platform.
 
-    sudo apt-get install cabal-install libghc-csv-dev libghc-curl-dev libghc-cmdargs-dev libghc-blaze-builder-dev libghc-http-types-dev libghc-stm-dev libghc-text-dev
+Install the environment and libraries first:
+
+	sudo apt-get install cabal-install libghc-aeson-dev libghc-attoparsec-dev libghc-blaze-builder-dev libghc-cmdargs-dev libghc-csv-dev libghc-http-types-dev libghc-stm-dev libghc6-text-dev libghc-wai-dev libghc-warp-dev libghc-http-date-dev libghc-random-dev libghc-zlib-dev
 	cabal update
-
-Not all packages can be found on Debian / Ubuntu or they are too old. In future this will be easier. So installing the remaining packages via Cabal.
 
 Then install Kryptoradio. This will fetch and compile remaining dependencies as well:
 
     cabal install
+
+If it compiles, you should have the binary in `~/.cabal/bin/kryptoradio-receiver`.
+
+**Important note for Raspberry Pi users: ** If you are building for
+Debian Wheezy on armhf architechture (like Raspberry Pi) then you have
+problems with the old ghc version. To solve that issue, you need a
+custom version of aeson library which has all TH functionality
+removed. Run the following commands on an EMPTY DIRECTORY:
+
+	git clone https://github.com/koodilehto/aeson .
+	git checkout wheezy_arm_ugly_fix
+	cabal install
+
+Then go back to the original source directory and run `cabal install` again.
 
 ## Running
 
