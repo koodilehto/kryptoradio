@@ -38,7 +38,8 @@ Install the environment and libraries first:
 
 Then install Kryptoradio. This will fetch and compile remaining dependencies as well:
 
-    cabal install
+	cd receiver
+	cabal install
 
 If it compiles, you should have the binary in `~/.cabal/bin/kryptoradio-receiver`.
 
