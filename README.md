@@ -33,7 +33,7 @@ a pull request of installation instructions for that platform.
 
 Install the environment and libraries first:
 
-	sudo apt-get install cabal-install libghc-aeson-dev libghc-attoparsec-dev libghc-blaze-builder-dev libghc-cmdargs-dev libghc-csv-dev libghc-http-types-dev libghc-stm-dev libghc6-text-dev libghc-wai-dev libghc-warp-dev libghc-http-date-dev libghc-random-dev libghc-zlib-dev
+	sudo apt-get install cabal-install libghc-aeson-dev libghc-attoparsec-dev libghc-blaze-builder-dev libghc-cmdargs-dev libghc-csv-dev libghc-http-types-dev libghc-stm-dev libghc-text-dev libghc-wai-dev libghc-warp-dev libghc-http-date-dev libghc-random-dev libghc-zlib-dev
 	cabal update
 
 Then install Kryptoradio. This will fetch and compile remaining dependencies as well:
@@ -54,6 +54,24 @@ removed. Run the following commands on an **empty directory**:
 	cabal install
 
 Then go back to the original source directory and run `cabal install` again.
+
+## Compiling broadcasting components
+
+You may safely skip this if you want to just receive Kryptoradio. Here
+are very brief installation instructions for broadcasting components:
+
+	sudo apt-get install cabal-install libghc-aeson-dev libghc-blaze-builder-dev libghc-cmdargs-dev libghc-http-types-dev libghc-stm-dev libghc-scientific-dev libghc-text-dev libghc-wai-dev libghc-warp-dev libghc-websockets-dev
+	cabal update
+	cd encoder
+	cabal install
+	cd ..
+	cd data_sources/exchange
+	cabal install
+	cd ../..
+
+The resulting binaries are `~/.cabal/bin/kryptoradio-exchange` and `~/.cabal/bin/kryptoradio-encoder`.
+
+Even if you don't have the hardware you may run the encoder in "mock" mode. Ask me for help.
 
 ## Running
 
