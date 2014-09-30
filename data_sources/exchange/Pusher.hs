@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- |Handles Websocket connection to Pusher and parses its messages
-module Kryptoradio.Exchange.Pusher (Pusher(..),connectPusher) where
+module Pusher (Pusher(..),connectPusher) where
 
 import Control.Applicative
 import Control.Concurrent.STM.TChan
@@ -12,7 +12,8 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Network.WebSockets (ClientApp,Connection,sendTextData,runClient,receiveData)
-import Kryptoradio.Exchange.Retry
+
+import Retry
 
 data Pusher = Pusher { event   :: Text
                      , payload :: Value

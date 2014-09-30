@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
-module Kryptoradio.Receiver.Parser where
+module Parser where
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
@@ -10,7 +10,8 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
 import Control.Monad (unless)
 import System.IO
-import Kryptoradio.Receiver.Resources
+
+import Resources
 
 data Packet = Sync SyncPacket | Payload BL.ByteString
 data ParseState = ParseState Int [B.ByteString] deriving (Show)

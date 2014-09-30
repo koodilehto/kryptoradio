@@ -22,9 +22,10 @@ import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
 import Text.CSV
 import Text.Printf
-import Kryptoradio.Receiver.Dvb
-import Kryptoradio.Receiver.Parser
-import Kryptoradio.Receiver.Resources
+
+import Dvb
+import Parser
+import Resources
 
 data Args = Args { device   :: Int
                  , frontend :: Int

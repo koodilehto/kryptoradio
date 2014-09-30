@@ -1,5 +1,5 @@
 -- |Helper functions for retrying, for example a connection.
-module Kryptoradio.Exchange.Retry where
+module Retry where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception

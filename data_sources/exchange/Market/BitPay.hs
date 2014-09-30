@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
-module Kryptoradio.Exchange.BitPay where
+module Market.BitPay where
 
 import Control.Applicative
 import Control.Concurrent (threadDelay)
@@ -9,7 +9,8 @@ import Control.Monad.STM
 import Data.Aeson
 import Data.Scientific (Scientific)
 import Network.Curl.Aeson
-import Kryptoradio.Exchange.Exchange
+
+import Exchange
 
 data BpRate = BpRate { code :: String
                      , name :: String

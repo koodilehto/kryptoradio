@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards, TupleSections #-}
-module Kryptoradio.Core.Resources where
+module Resources where
 
 import Blaze.ByteString.Builder
 import Data.ByteString.Lazy.Char8 (ByteString,pack)

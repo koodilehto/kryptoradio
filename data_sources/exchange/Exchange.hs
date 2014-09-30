@@ -1,5 +1,5 @@
--- |Common functions between exchanges
-module Kryptoradio.Exchange.Exchange where
+-- |Common functions between exchanges.
+module Exchange where
 
 import Data.Scientific
 

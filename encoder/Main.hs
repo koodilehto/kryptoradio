@@ -21,11 +21,11 @@ import Network.Wai.Handler.Warp
 import System.Console.CmdArgs.Implicit hiding (name)
 import System.IO
 
-import Kryptoradio.Core.Resources
-import Kryptoradio.Core.Serial
-import Kryptoradio.Core.MockSerial
-import Kryptoradio.Core.Serialization
-import Kryptoradio.Core.SyncTimer
+import Resources
+import Serial
+import MockSerial
+import Serialization
+import SyncTimer
 
 data Args = Args { device :: String
                  , baud   :: Int
@@ -43,8 +43,8 @@ synopsis = Args { device = def &= argPos 0 &= typ "DEVICE"
                                        \set, it emulates limited throughput, \
                                        \too."
                 }
-           &= program "kryptoradio-broadcaster"
-           &= summary "Kryptoradio Broadcaster v0.0.1"
+           &= program "kryptoradio-encoder"
+           &= summary "Kryptoradio Encoder v0.0.1"
            &= help "Listens to given HTTP port and sends commands to \
                    \serial port connected to DVB encoder."
 

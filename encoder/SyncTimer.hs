@@ -1,5 +1,5 @@
 -- |Module for sync timing.
-module Kryptoradio.Core.SyncTimer where
+module SyncTimer where
 
 import Control.Monad
 import Control.Monad.STM

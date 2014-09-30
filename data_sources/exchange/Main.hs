@@ -14,10 +14,11 @@ import qualified Data.Map.Strict as M
 import Data.Scientific
 import Network.Curl
 import System.Console.CmdArgs.Implicit hiding (name)
-import Kryptoradio.Exchange.Bitstamp
-import Kryptoradio.Exchange.BitPay
-import Kryptoradio.Exchange.Exchange
-import Kryptoradio.Exchange.ScifiTools
+
+import Market.Bitstamp
+import Market.BitPay
+import Exchange
+import ScifiTools
 
 -- |Do something if a thread dies.
 bomb :: (a -> c) -> Either SomeException b -> c
@@ -34,7 +35,7 @@ synopsis = Args { url = defUrl &= help ("Kryptoradio Core URL (default: "++
            &= program "kryptoradio-exchange"
            &= summary "Kryptoradio Exchange Information v0.0.1"
            &= help "Connects to BitPay for exchange rates and Bitstamp for \
-                   \order book. Sends data to Kryptoradio Core at given URL"
+                   \order book. Sends data to Kryptoradio Encoder at given URL"
 
 main = do
   Args{..} <- cmdArgs synopsis

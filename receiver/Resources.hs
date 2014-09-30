@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Kryptoradio.Receiver.Resources
+module Resources
        ( Resource(..)
        , SyncPacket
        , retrofit

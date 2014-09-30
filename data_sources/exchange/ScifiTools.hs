@@ -1,5 +1,5 @@
 -- | Tools for efficient serialization of Scientific.
-module Kryptoradio.Exchange.ScifiTools where
+module ScifiTools where
 
 import Data.Scientific
 import Data.List

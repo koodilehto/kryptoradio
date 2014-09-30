@@ -1,4 +1,4 @@
-module Kryptoradio.Core.MockSerial (openMockSerialOut) where
+module MockSerial (openMockSerialOut) where
 
 import Control.Monad (unless)
 import Control.Concurrent (threadDelay)

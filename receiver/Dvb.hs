@@ -1,7 +1,7 @@
 -- |Wrappers for libdvb. I'm not sure how it should be done so this
 -- may contain fatal errors. Feel free to fix my code if it's broken.
 {-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
-module Kryptoradio.Receiver.Dvb where
+module Dvb where
 
 import Control.Monad
 import Foreign.C
