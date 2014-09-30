@@ -1,20 +1,20 @@
 <!-- -*- mode: markdown; coding: utf-8 -*- -->
 
-# Bitcoin broadcasting tool
+# Kryptoradio – Bitcoin broadcasting tool and more!
 
-The aim of this project is to create a tool which serializes bitcoin
-peer-to-peer network flow and generates constant-bitrate stream for
-broadcasting. The serialization tool must be connected to a trusted
-peer (a bitcoin node run by yourself) because transactions and blocks
-are not verified to keep this tool as simple as possible without
-compromizing security.
+The aim of this project is to create a toolset for broadcasting data
+to DVB-T and receiving it. It uses Kryptoradio protocol and is
+suitable to all kinds of low bandwidth data. The main use case is
+Bitcoin broadcasting over digital television.
 
-The resulting stream may be transmitted over any unidirectional
-channel like DVB-T and FM subcarrier.
+The Bitcoin serialization tool must be connected to a trusted peer (a
+bitcoin node run by yourself) because transactions and blocks are not
+verified to keep this tool as simple as possible without compromizing
+security. For information about the Bitcoin part, see subdirectory
+`bitcoin/`.
 
-Current version connects to given bitcoin node, is capable of
-requesting transaction and block contents, serializing traffic, and
-logging all network messages to a log directory.
+The data stream produced by `kryptoradio-encoder` uses PES packet
+format that is compatible with DVB encoder hardware.
 
 See our [project page](http://kryptoradio.koodilehto.fi/) for a
 longer description.
@@ -42,11 +42,11 @@ Then install Kryptoradio. This will fetch and compile remaining dependencies as 
 
 If it compiles, you should have the binary in `~/.cabal/bin/kryptoradio-receiver`.
 
-**Important note for Raspberry Pi users: ** If you are building for
-Debian Wheezy on armhf architechture (like Raspberry Pi) then you have
-problems with the old ghc version. To solve that issue, you need a
+**Important note for Raspberry Pi users:** If you are building for
+Debian Wheezy on `armhf` architechture (like Raspberry Pi) then you have
+problems with the old GHC version. To solve that issue, you need a
 custom version of aeson library which has all TH functionality
-removed. Run the following commands on an EMPTY DIRECTORY:
+removed. Run the following commands on an **empty directory**:
 
 	git clone https://github.com/koodilehto/aeson .
 	git checkout wheezy_arm_ugly_fix
@@ -78,8 +78,6 @@ To listen to currency exchange information, try this:
 Sync happens every 60 seconds so you may need wait at most one minute
 after starting the receiver before the resource is available. You can
 use /api/waitsync to wait for the first sync to happen.
-
-For information about the Bitcoin part, see subdirectory `bitcoin/`.
 
 ## License
 
