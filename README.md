@@ -49,8 +49,7 @@ problems with the old GHC version. To solve that issue, you need a
 custom version of aeson library which has all TH functionality
 removed. Run the following commands on an **empty directory**:
 
-	git clone https://github.com/koodilehto/aeson .
-	git checkout wheezy_arm_ugly_fix
+	git clone -b wheezy_arm_ugly_fix https://github.com/koodilehto/aeson .
 	cabal install
 
 Then go back to the original source directory and run `cabal install` again.
@@ -83,12 +82,12 @@ You can add Cabal binary directory to your PATH to make running it easier. By de
 
 The following entry points are available:
 
-* /api
-* /api/waitsync
-* /api/resources
-* /api/resource/NAME/raw
-* /api/resource/NAME/json
-* /api/resource/NAME/jsoncsv
+* `/api`
+* `/api/waitsync`
+* `/api/resources`
+* `/api/resource/NAME/raw`
+* `/api/resource/NAME/json`
+* `/api/resource/NAME/jsoncsv`
 
 To listen to currency exchange information, try this:
 
@@ -96,7 +95,7 @@ To listen to currency exchange information, try this:
 	
 Sync happens every 60 seconds so you may need wait at most one minute
 after starting the receiver before the resource is available. You can
-use /api/waitsync to wait for the first sync to happen.
+use `/api/waitsync` to wait for the first sync to happen.
 
 ## License
 
