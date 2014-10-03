@@ -137,6 +137,19 @@ img.logo {
   margin-right: auto;
 }
 
+img.portrait {
+  margin-right: 10px;
+  float: left;
+  left: 0px;
+  width: 80px;
+  clear: both;
+}
+
+div.person {
+  float: left;
+  margin-bottom: 10px;
+}
+
 #downloads {
   margin-bottom: 40px;
 }
