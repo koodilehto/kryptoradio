@@ -32,4 +32,5 @@ executable kryptoradio-receiver
     text >= 0.11.2.0,
     unix >= 2.5.1.0,
     wai >= 3.0.1.1,
+    wai-middleware-static >= 0.6.0,
     warp >= 3.0.0.5

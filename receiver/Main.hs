@@ -19,6 +19,7 @@ import Data.Word
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Static
 import System.Console.CmdArgs.Implicit hiding (name)
 import Text.CSV
 import Text.Printf
@@ -34,44 +35,66 @@ data Args = Args { device   :: Int
                  , pid      :: Int
                  , host     :: String
                  , port     :: Int
+                 , static   :: Maybe String
                  } deriving (Show, Data, Typeable)
 
-synopsis = Args { device = 0 &= help "DVB device id (default: 0)"
-                , frontend = 0 &= help "DVB frontend id (default: 0)"
-                , demuxer = 0 &= help "DVB demuxer id (default: 0)"
-                , freq = 0 &= argPos 0 &= typ "HERTZ"
-                , pid = 8101 &= help "Kryptoradio PID (default: 8101)"
-                , host = "*" &= help "IP address to bind to (default: all)"
-                , port = 3000 &= help "HTTP port to listen to (default: 3000)"
-                }
-           &= program "kryptoradio-receiver"
-           &= summary "Kryptoradio Receiver v0.0.1"
-           &= help "Listens to given HTTP port for connections while \
-                   \receiving and decoding data from DVB device connected \
-                   \to the system. If you have only one ordinary DVB-adapter \
-                   \in your system, you don't need to set device, frontend \
-                   \nor demuxer IDs. If you are receiving from Digita \
-                   \broadcast in Finland, the default PID is also fine. \
-                   \Frequency must be given in Hz."
+synopsis =
+  Args { device = 0 &= help "DVB device id (default: 0)"
+       , frontend = 0 &= help "DVB frontend id (default: 0)"
+       , demuxer = 0 &= help "DVB demuxer id (default: 0)"
+       , freq = 0 &= argPos 0 &= typ "HERTZ"
+       , pid = 8101 &= help "Kryptoradio PID (default: 8101)"
+       , host = "*" &= help "IP address to bind to (default: all)"
+       , port = 3000 &= help "HTTP port to listen to (default: 3000)"
+       , static = def &= typDir &= help "Path to static WWW directory"
+       }
+  &= program "kryptoradio-receiver"
+  &= summary "Kryptoradio Receiver v0.0.1"
+  &= help "Listens to given HTTP port for connections while \
+          \receiving and decoding data from DVB device connected \
+          \to the system. If you have only one ordinary DVB-adapter \
+          \in your system, you don't need to set device, frontend \
+          \nor demuxer IDs. If you are receiving from Digita \
+          \broadcast in Finland, the default PID is also fine. \
+          \Frequency must be given in Hz. If you want to host local files \
+          \in addition to the API, provide static WWW directory."
 
 main = do
+  -- Figure out settings
   Args{..} <- cmdArgs synopsis
   let set = setHost (S.fromString host) $
             setPort port $
             defaultSettings
+  let staticApp = case static of
+        Nothing  -> id -- No static hosting
+        Just dir -> (staticPolicy $ addBase dir) .
+                    (staticPolicy $ addBase dir <> addSuffix "/index.html") .
+                    (staticPolicy $ addBase dir <> addSuffix ".html")
+
+  -- Debug messages
   putStrLn $ "Tuning to " ++ show (fromIntegral freq / 1e6) ++ "MHz, PID " ++ show pid
   putStrLn $ "Binding to " ++ show (getHost set) ++ ", port " ++ show (getPort set)
+  case static of
+    Just dir -> putStrLn $ "Hosting static WWW directory at " ++ dir
+    Nothing  -> return ()
+
+  -- Tune in and start processing of messages
   (h,dvb) <- openDvb device frontend demuxer freq pid
   resVar <- newTVarIO []
   -- FIXME if using threaded runtime the handle has extremely high
   -- latency (minutes) when run inside forkIO
   forkIO $ krpToChan h resVar
-  -- Ready to serve
-  runSettings set $ app resVar
+
+  -- Start web service
+  runSettings set $ staticApp $ api resVar
   closeDvb dvb
 
-app :: TVar [Resource] -> Application
-app var req respond = do
+-- |Add given suffix to every URL.
+addSuffix :: String -> Policy
+addSuffix suffix = policy $ \base -> Just (base ++ suffix)
+
+api :: TVar [Resource] -> Application
+api var req respond = do
   resources <- readTVarIO var
   let byName = flip lookup $ map (\Resource{..} -> (name,var)) resources
   case (requestMethod req,pathInfo req) of
