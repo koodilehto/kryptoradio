@@ -99,31 +99,43 @@ api :: TVar [Resource] -> Application
 api var req respond = do
   resources <- readTVarIO var
   let byName = flip lookup $ map (\Resource{..} -> (rname,var)) resources
-  case (requestMethod req,pathInfo req) of
+  case (requestMethod req, dropTrailingSlash $ pathInfo $ req) of
+    -- Basic API description
     ("GET",["api"]) ->
       respond $ jsonData ok200 $
       object ["name" .= ("Kryptoradio DVB-T receiver" :: Text)
+             ,"version" .= case version of
+                 Version x _ -> x -- Show cabal version
              ,"synced" .= not(null resources)
+             ,"services" .= ["waitsync"::Text,"resource"]
+             ,"formats" .= ["raw"::Text,"json","jsoncsv"]
              ]
+
+    -- Waits for the sync to happen
     ("GET",["api","waitsync"]) -> do
       atomically $ do
         x <- readTVar var
         when (null x) retry
       respond $ jsonData ok200 True
-    ("GET",["api","resources"]) ->
+
+    -- Lists available resources
+    ("GET",["api","resource"]) ->
       respond $ jsonData ok200 $ map resourceToValue resources
+
+    -- The actual Kryptoradio data response
     ("GET",["api","resource",res,fmt]) -> do
       case byName res of
-        Nothing -> respond $ jsonData notFound404 $
-                   object ["error" .= ("Resource not found" :: Text)]
+        Nothing -> respond $ jsonError notFound404 "Resource not found"
         Just bchan -> do
           chan <- atomically $ dupTChan bchan
           respond $ case fmt of
             "raw" -> rawStream chan
             "json" -> jsonStream chan
             "jsoncsv" -> jsonCsvStream chan
-            _ -> jsonData badRequest400 $
-                 object ["error" .= ("Unknown format" :: Text)]
+            _ -> jsonError badRequest400 "Unknown format"
+
+    -- Error message if nothing else matches
+    _ -> respond $ jsonError notFound404 "File or API not found. Try /api"
 
 -- |Outputs binary data stream. Data consists of variable-sized
 -- chunks, in which the first 4 bytes contain chunk length in big
@@ -176,3 +188,13 @@ jsonData code = responseLBS code jsonHeader . encode
 
 rawHeader = [("Content-Type", "application/octet-stream")]
 jsonHeader = [("Content-Type", "application/json")]
+
+-- |Generates JSON with an error message.
+jsonError :: Status -> Text -> Response
+jsonError code msg = jsonData code $ object ["error" .= msg]
+
+-- |Drops last component of list if it's empty Text. In case of wai
+-- pathInfo, this represents the slash after the URL.
+dropTrailingSlash :: [Text] -> [Text]
+dropTrailingSlash x | last x == "" = init x
+                    | otherwise = x
