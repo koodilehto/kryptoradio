@@ -19,4 +19,4 @@ This is the first public release of Kryptoradio receiver. The release
 is experimental and is targeted to application developers.
 
 * Ubuntu 14.04 LTS (x86_64) [.deb](haskell-kryptoradio-receiver-utils_0.0.1_amd64.deb)
-* Source [.tar.gz](https://github.com/koodilehto/kryptoradio/archive/v0.0.1.zip)
+* Source [.tar.gz](https://github.com/koodilehto/kryptoradio/archive/v0.0.1.tar.gz)
