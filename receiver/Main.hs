@@ -21,7 +21,7 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Static
-import System.Console.CmdArgs.Implicit hiding (name)
+import System.Console.CmdArgs.Implicit
 import Text.CSV
 import Text.Printf
 
@@ -41,11 +41,11 @@ data Args = Args { device   :: Int
                  } deriving (Show, Data, Typeable)
 
 synopsis =
-  Args { device = 0 &= help "DVB device id (default: 0)"
+  Args { device = 0 &= name "i" &= help "DVB device id (default: 0)"
        , frontend = 0 &= help "DVB frontend id (default: 0)"
        , demuxer = 0 &= help "DVB demuxer id (default: 0)"
-       , freq = 0 &= argPos 0 &= typ "HERTZ"
-       , pid = 8101 &= help "Kryptoradio PID (default: 8101)"
+       , freq = 0 &= argPos 0 &= typ "FREQUENCY"
+       , pid = 8101 &= name "P" &= help "DVB PID of Kryptoradio (default: 8101)"
        , host = "*" &= help "IP address to bind to (default: all)"
        , port = 3000 &= help "HTTP port to listen to (default: 3000)"
        , static = def &= typDir &= help "Path to static WWW directory"
@@ -59,7 +59,7 @@ synopsis =
           \nor demuxer IDs. If you are receiving from Digita \
           \broadcast in Finland, the default PID is also fine. \
           \Frequency must be given in Hz. If you want to host local files \
-          \in addition to the API, provide static WWW directory."
+          \in addition to the API, set static WWW directory."
 
 main = do
   -- Figure out settings
@@ -98,7 +98,7 @@ addSuffix suffix = policy $ \base -> Just (base ++ suffix)
 api :: TVar [Resource] -> Application
 api var req respond = do
   resources <- readTVarIO var
-  let byName = flip lookup $ map (\Resource{..} -> (name,var)) resources
+  let byName = flip lookup $ map (\Resource{..} -> (rname,var)) resources
   case (requestMethod req,pathInfo req) of
     ("GET",["api"]) ->
       respond $ jsonData ok200 $
@@ -170,7 +170,7 @@ escape :: Builder -> Word8 -> Builder
 escape acc byte | byte < 32 || byte > 126 = acc <> (fromString $ printf "\\u%04x" byte)
                 | otherwise               = acc <> (fromByteString $ BS.singleton byte)
 
-resourceToValue Resource{..} = object ["rid" .= rid, "name" .= name, "desc" .= desc]
+resourceToValue Resource{..} = object ["rid" .= rid, "name" .= rname, "desc" .= desc]
 
 jsonData code = responseLBS code jsonHeader . encode
 

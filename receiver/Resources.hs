@@ -20,7 +20,7 @@ type SyncPacket = [RawResource]
 type RawResource = TChan ByteString -> Resource
 
 data Resource = Resource { rid      :: Word8
-                         , name     :: Text
+                         , rname    :: Text
                          , desc     :: Text
                          , var      :: TChan ByteString
                          }
@@ -32,8 +32,8 @@ retrofit :: [Resource] -> SyncPacket -> STM [Resource]
 retrofit old new = mapM addVar new
   where
     findVar = flip lookup $ map pair old
-    pair Resource{..} = (name,var)
-    addVar raw = case findVar $ name $ raw undefined of
+    pair Resource{..} = (rname,var)
+    addVar raw = case findVar $ rname $ raw undefined of
       Just x  -> return $ raw x
       Nothing -> raw <$> newBroadcastTChan
 
