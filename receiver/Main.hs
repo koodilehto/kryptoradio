@@ -15,6 +15,7 @@ import Data.Text (Text)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Encoding as T
 import Data.Monoid
+import Data.Version
 import Data.Word
 import Network.HTTP.Types
 import Network.Wai
@@ -27,6 +28,7 @@ import Text.Printf
 import Dvb
 import Parser
 import Resources
+import Paths_kryptoradio_receiver
 
 data Args = Args { device   :: Int
                  , frontend :: Int
@@ -49,7 +51,7 @@ synopsis =
        , static = def &= typDir &= help "Path to static WWW directory"
        }
   &= program "kryptoradio-receiver"
-  &= summary "Kryptoradio Receiver v0.0.1"
+  &= summary ("Kryptoradio Receiver " ++ showVersion version)
   &= help "Listens to given HTTP port for connections while \
           \receiving and decoding data from DVB device connected \
           \to the system. If you have only one ordinary DVB-adapter \
