@@ -6,7 +6,7 @@ import Control.Concurrent.STM
 import Control.Exception.Base (SomeException)
 import Control.Monad (forever, when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 import Data.Conduit
 import Data.Conduit.Network
 import qualified Data.String as S
@@ -18,13 +18,18 @@ import Text.Printf
 
 import Paths_kryptoradio_internet
 
+defFrame :: Int
+defFrame = 184
+
 data Args = Args { host   :: String
                  , port   :: Int
+                 , frame  :: Int
                  } deriving (Show, Data, Typeable)
 
 synopsis =
   Args { host = "*" &= help "IP address to bind to (default: all)"
        , port = 3003 &= help "HTTP port to listen to (default: 3003)"
+       , frame = defFrame &= help ("Frame size (default: " ++ show defFrame ++ ")")
        }
   &= program "kryptoradio-internet"
   &= summary ("Kryptoradio Internet Gateway " ++ showVersion version)
@@ -41,7 +46,7 @@ main = do
   forkIO $ runTCPServer (serverSettings port $ S.fromString host) $ plumbing ch
   forever $ do
     -- Read packets from standard input
-    bs <- B.hGetSome stdin 1024
+    bs <- B.hGet stdin frame
     when (B.null bs) $ exitSuccess
     atomically $ writeTChan ch bs
 
