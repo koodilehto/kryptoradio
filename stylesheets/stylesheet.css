@@ -183,6 +183,15 @@ aside a.button {
   margin-bottom: 20px;
   font-size: 21px;
 }
+a.buy {
+  width: 192px;
+  padding-left: 32px;
+  padding-right: 32px;
+  display: block;
+  background: transparent url(../images/buy-button.png) 0 0 no-repeat;
+  margin-bottom: 20px;
+  font-size: 21px;
+}
 
 code, pre {
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
