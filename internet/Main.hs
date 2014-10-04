@@ -18,7 +18,7 @@ import Text.Printf
 import Paths_kryptoradio_internet
 
 defFrame :: Int
-defFrame = 178
+defFrame = 184
 
 data Args = Args { host   :: String
                  , port   :: Int
@@ -45,15 +45,18 @@ main = do
     -- Read packets from standard input
     bs <- B.hGet stdin frame
     atomically $ writeTChan ch bs
-  runTCPServer (serverSettings port $ S.fromString host) $ \appData -> do
-    -- Write all data from a channel
-    liftIO $ printf "%s connected\n" (show $ appSockAddr appData)
-    source ch $$ catchC (appSink appData) (sayClose appData)
+  -- Write all data from a channel
+  runTCPServer (serverSettings port $ S.fromString host) $ plumbing ch
 
--- |Reports when the handle has been closed.
-sayClose :: MonadIO m => AppData -> SomeException -> m ()
-sayClose appData e = liftIO $ printf "%s disconnected (%s)\n"
-                     (show $ appSockAddr appData) (show e)
+plumbing :: TChan B.ByteString -> AppData -> IO ()
+plumbing ch appData = do
+  printf "%s connected\n" $ show $ appSockAddr appData
+  source ch $$ do
+    x <- tryC $ appSink appData
+    let info = case x of
+          Right _ -> "ok"
+          Left e -> show (e :: SomeException)
+    liftIO $ printf "%s disconnected (%s)\n" (show $ appSockAddr appData) info
 
 -- |Reads given broadcast channel and writes the output to channel 
 source :: TChan B.ByteString -> Source IO B.ByteString
