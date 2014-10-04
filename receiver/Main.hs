@@ -211,5 +211,6 @@ jsonError code msg = jsonData code $ object ["error" .= msg]
 -- |Drops last component of list if it's empty Text. In case of wai
 -- pathInfo, this represents the slash after the URL.
 dropTrailingSlash :: [Text] -> [Text]
+dropTrailingSlash [] = []
 dropTrailingSlash x | last x == "" = init x
                     | otherwise = x
