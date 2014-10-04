@@ -4,7 +4,7 @@ module Main where
 import Control.Concurrent (forkIO)
 import Control.Concurrent.STM
 import Control.Exception.Base (SomeException)
-import Control.Monad (forever)
+import Control.Monad (forever, when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.ByteString.Char8 as B
 import Data.Conduit
@@ -12,6 +12,7 @@ import Data.Conduit.Network
 import qualified Data.String as S
 import Data.Version
 import System.Console.CmdArgs.Implicit
+import System.Exit (exitSuccess)
 import System.IO
 import Text.Printf
 
@@ -44,6 +45,7 @@ main = do
   forkIO $ forever $ do
     -- Read packets from standard input
     bs <- B.hGet stdin frame
+    when (B.null bs) $ exitSuccess
     atomically $ writeTChan ch bs
   -- Write all data from a channel
   runTCPServer (serverSettings port $ S.fromString host) $ plumbing ch
@@ -51,12 +53,15 @@ main = do
 plumbing :: TChan B.ByteString -> AppData -> IO ()
 plumbing ch appData = do
   printf "%s connected\n" $ show $ appSockAddr appData
+  hFlush stdout
   source ch $$ do
     x <- tryC $ appSink appData
     let info = case x of
           Right _ -> "ok"
           Left e -> show (e :: SomeException)
-    liftIO $ printf "%s disconnected (%s)\n" (show $ appSockAddr appData) info
+    liftIO $ do
+      printf "%s disconnected (%s)\n" (show $ appSockAddr appData) info
+      hFlush stdout
 
 -- |Reads given broadcast channel and writes the output to channel 
 source :: TChan B.ByteString -> Source IO B.ByteString
