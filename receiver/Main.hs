@@ -18,6 +18,7 @@ import Data.Monoid
 import Data.Version
 import Data.Word
 import Network.HTTP.Types
+import Network
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Static
@@ -33,22 +34,26 @@ import Paths_kryptoradio_receiver
 data Args = Args { device   :: Int
                  , frontend :: Int
                  , demuxer  :: Int
-                 , freq     :: Int
+                 , freq     :: Maybe Int
                  , pid      :: Int
                  , host     :: String
                  , port     :: Int
                  , static   :: Maybe String
+                 , sourceHost :: Maybe String
+                 , sourcePort :: Int
                  } deriving (Show, Data, Typeable)
 
 synopsis =
   Args { device = 0 &= name "i" &= help "DVB device id (default: 0)"
-       , frontend = 0 &= help "DVB frontend id (default: 0)"
+       , frontend = 0 &= name "F" &= help "DVB frontend id (default: 0)"
        , demuxer = 0 &= help "DVB demuxer id (default: 0)"
-       , freq = 0 &= argPos 0 &= typ "FREQUENCY"
+       , freq = def &= help "DVB multiplex frequency in hertz" &= typ "HERTZ"
        , pid = 8101 &= name "P" &= help "DVB PID of Kryptoradio (default: 8101)"
        , host = "*" &= help "IP address to bind to (default: all)"
        , port = 3000 &= help "HTTP port to listen to (default: 3000)"
-       , static = def &= typDir &= help "Path to static WWW directory"
+       , static = def &= typDir &= name "s" &= help "Path to static WWW directory"
+       , sourceHost = def &= typ "NAME" &= help "Host name of Kryptoradio stream server"
+       , sourcePort = 3003 &= help "TCP port of Kryptoradio stream server (default: 3003)"
        }
   &= program "kryptoradio-receiver"
   &= summary ("Kryptoradio Receiver " ++ showVersion version)
@@ -59,7 +64,8 @@ synopsis =
           \nor demuxer IDs. If you are receiving from Digita \
           \broadcast in Finland, the default PID is also fine. \
           \Frequency must be given in Hz. If you want to host local files \
-          \in addition to the API, set static WWW directory."
+          \in addition to the API, set static WWW directory. Options --freq \
+          \and --sourcehost / --sourceport are mutually exclusive."
 
 main = do
   -- Figure out settings
@@ -73,15 +79,25 @@ main = do
                     (staticPolicy $ addBase dir <> addSuffix "/index.html") .
                     (staticPolicy $ addBase dir <> addSuffix ".html")
 
+  -- Connect, depending on the connection type (DVB or network socket)
+  (h,dvb) <- case (freq,sourceHost) of
+    (Just freq,Nothing) -> do
+      putStrLn $ "Tuning to " ++ show (fromIntegral freq / 1e6) ++ "MHz, PID " ++ show pid
+      (h,dvb) <- openDvb device frontend demuxer freq pid
+      return (h,Just dvb)
+    (Nothing,Just h) -> do
+      putStrLn $ "Connecting to Kryptoradio data source at " ++ h ++ " port " ++ show sourcePort
+      h <- connectTo h (PortNumber $ fromIntegral sourcePort)
+      return (h,Nothing)
+    _ -> error "You must define either frequency or TCP data source, not both. See --help"
+  
   -- Debug messages
-  putStrLn $ "Tuning to " ++ show (fromIntegral freq / 1e6) ++ "MHz, PID " ++ show pid
   putStrLn $ "Binding to " ++ show (getHost set) ++ ", port " ++ show (getPort set)
   case static of
     Just dir -> putStrLn $ "Hosting static WWW directory at " ++ dir
     Nothing  -> return ()
 
-  -- Tune in and start processing of messages
-  (h,dvb) <- openDvb device frontend demuxer freq pid
+  -- Start processing of messages
   resVar <- newTVarIO []
   -- FIXME if using threaded runtime the handle has extremely high
   -- latency (minutes) when run inside forkIO
@@ -89,7 +105,6 @@ main = do
 
   -- Start web service
   runSettings set $ staticApp $ api resVar
-  closeDvb dvb
 
 -- |Add given suffix to every URL.
 addSuffix :: String -> Policy
