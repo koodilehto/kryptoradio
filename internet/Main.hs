@@ -37,13 +37,13 @@ main = do
   Args{..} <- cmdArgs synopsis
   ch <- newBroadcastTChanIO
   hSetBuffering stdin NoBuffering
-  forkIO $ forever $ do
+  -- Write all data from a channel
+  forkIO $ runTCPServer (serverSettings port $ S.fromString host) $ plumbing ch
+  forever $ do
     -- Read packets from standard input
     bs <- B.hGetSome stdin 1024
     when (B.null bs) $ exitSuccess
     atomically $ writeTChan ch bs
-  -- Write all data from a channel
-  runTCPServer (serverSettings port $ S.fromString host) $ plumbing ch
 
 plumbing :: TChan B.ByteString -> AppData -> IO ()
 plumbing ch appData = do
