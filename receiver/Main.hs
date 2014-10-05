@@ -201,8 +201,9 @@ resourceToValue Resource{..} = object ["rid" .= rid, "name" .= rname, "desc" .= 
 
 jsonData code = responseLBS code jsonHeader . encode
 
-rawHeader = [("Content-Type", "application/octet-stream")]
-jsonHeader = [("Content-Type", "application/json")]
+rawHeader = [("Content-Type", "application/octet-stream"),cors]
+jsonHeader = [("Content-Type", "application/json"),cors]
+cors = ("Access-Control-Allow-Origin","*")
 
 -- |Generates JSON with an error message.
 jsonError :: Status -> Text -> Response
