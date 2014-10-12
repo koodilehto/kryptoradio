@@ -4,20 +4,15 @@
 module Main where
 
 import qualified Data.ByteString.Char8 as BS
+import Network
 import System.Console.CmdArgs.Implicit
-import Network.Curl
-import Data.Word
-import Control.Concurrent
-import Control.Concurrent.STM
 import System.IO
-import Control.Monad
-import Data.List
 
-data Args = Args { url       :: String
+data Args = Args { socket :: String
                  } deriving (Show, Data, Typeable)
 
 synopsis =
-  Args { url = def &= argPos 0 &= typ "URL"
+  Args { socket = def &= argPos 0 &= typ "SOCKET"
        }
   &= program "kryptoradio-streamer"
   &= summary "Kryptoradio Streamer v0.0.1"
@@ -26,25 +21,41 @@ synopsis =
 
 main = do
   Args{..} <- cmdArgs synopsis
-  unsent <- newTVarIO []
+  out <- connectTo undefined $ UnixSocket socket
   hSetBuffering stdin LineBuffering
-  
-  forever $ do
-    bs <- BS.getLine
-    atomically $ modifyTVar unsent (bs:)
-    forkIO $ update url unsent
 
-update url var = do
-  origList <- readTVarIO var
-  let newStuff = BS.intercalate "," $ reverse origList
-  (status,_) <- curlGetString url
-                [CurlCustomRequest "PUT", CurlPostFields [BS.unpack newStuff]]
-  case status of
-    CurlOK -> do
-      atomically $ do
-        curList <- readTVar var
-        if isSuffixOf origList curList
-          then writeTVar var $ drop (length curList - length origList) curList
-          else fail "Queued list has sporadically changed. Very bad."
-      putStrLn "Updated"
-    _ -> putStrLn "Discarded"
+  let loop queue = do
+        bs <- BS.getLine
+        left <- update out (bs:queue)
+        loop left
+    in loop []
+
+-- |Updates data in encoder and returns remaining buffer.
+update :: Handle -> [BS.ByteString] -> IO [BS.ByteString]
+update h queue = do
+  -- Try to delete last and get report
+  deleted <- isDeleted h
+  let sendList = case deleted of
+        True -> queue
+        False -> [head queue]
+      newStuff = BS.intercalate "\n" $ reverse sendList
+  
+  -- Send to socket
+  hPrint h $ BS.length newStuff
+  BS.hPut h newStuff
+
+  -- Return remaining buffer
+  return sendList
+
+-- |Returns True if previously sent element was dequeued or False
+-- otherwise. Blocks until it gets a response from main thread.
+isDeleted :: Handle -> IO Bool
+isDeleted h = do
+  BS.hPut h "D"
+  loop
+  where loop = do
+          c <- BS.hGet h 1
+          case c of
+            "R" -> return False
+            "D" -> return True
+            _ -> loop
