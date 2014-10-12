@@ -64,6 +64,7 @@ main = do
 app :: Resource -> SyncAct -> Handle -> IO ()
 app res timer h = do
   hSetBuffering h NoBuffering
+  B.hPut h "R"
   forkIO $ foreverSync timer $ B.hPut h "S"
   forever $ handleMsg res h
 
