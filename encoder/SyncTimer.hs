@@ -27,3 +27,12 @@ waitSync :: SyncAct -> Integer -> SyncAct
 waitSync act start = do
   now <- act
   if now <= start then retry else return now
+
+-- |Run given IO action forever on every sync (until exception occurs)
+foreverSync :: SyncAct -> IO a -> IO ()
+foreverSync act io = do
+  atomically act >>= foreverSync'
+  where foreverSync' i = do
+          new <- atomically $ waitSync act i
+          io
+          foreverSync' new
