@@ -42,7 +42,10 @@ fetch () {
 }
 
 send () {
-    curl -X PUT http://localhost:3000/fimk --data-binary "@$RAW_CSV"
+    {
+	stat -c %s "$RAW_CSV"
+	cat "$RAW_CSV"
+    } | nc -U ~/.kryptoradio-encoder/fimk
 }
 
 trap clean EXIT INT
