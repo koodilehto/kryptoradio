@@ -3,7 +3,7 @@
 module Main where
 
 import Control.Exception
-import Control.Concurrent (forkFinally, forkIO)
+import Control.Concurrent (forkFinally)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad.STM
@@ -12,8 +12,10 @@ import Data.List (intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Scientific
-import Network.Curl
+import Network
 import System.Console.CmdArgs.Implicit hiding (name)
+import System.Directory
+import System.IO
 
 import Market.Bitstamp
 import Market.BitPay
@@ -24,54 +26,50 @@ import ScifiTools
 bomb :: (a -> c) -> Either SomeException b -> c
 bomb act = act . either throw (const $ error "Thread died")
 
-defUrl = "http://localhost:3000/exchange"
-
-data Args = Args { url    :: String
+data Args = Args { socket :: String
                  } deriving (Show, Data, Typeable)
 
-synopsis = Args { url = defUrl &= help ("Kryptoradio Core URL (default: "++
-                                        defUrl++")")
-                }
-           &= program "kryptoradio-exchange"
-           &= summary "Kryptoradio Exchange Information v0.0.1"
-           &= help "Connects to BitPay for exchange rates and Bitstamp for \
-                   \order book. Sends data to Kryptoradio Encoder at given URL"
+synopsis defSocket =
+  Args { socket = defSocket &= help ("Kryptoradio Encoder socket (default: " ++
+                                     defSocket ++ ")")
+       }
+  &= program "kryptoradio-exchange"
+  &= summary "Kryptoradio Exchange Information v0.0.1"
+  &= help "Connects to BitPay for exchange rates and Bitstamp for \
+          \order book. Sends data to Kryptoradio Encoder at given URL"
 
 main = do
-  Args{..} <- cmdArgs synopsis
+  defSocket <- getDefSocket
+  Args{..} <- cmdArgs $ synopsis defSocket
+  -- Prepare transactional variables
   ch <- newTChanIO
   book <- newTVarIO M.empty
   sentBook <- newTVarIO M.empty
-  -- safefork makes sure that the exception is listened on the main loop
+  -- Open connection to Kryptoradio encoder
+  out <- connectTo undefined $ UnixSocket socket
+  -- Fork data sources. `safefork` makes sure that the exception is
+  -- listened on the main loop
   let safeFork a = forkFinally a $ bomb $ atomically.writeTVar book
   safeFork $ bitstamp ch
   safeFork $ bitpay ch
   safeFork $ orderbook ch book
   -- Loop for changes in order book and fork updater for it
-  let loop old = do
-        waitNew book old
-        -- New data, trying to send it
-        new <- readTVarIO book
-        forkIO $ updateBook url sentBook new
-        -- Not interested if it fails or not
-        loop new
-    in loop M.empty
-
--- Updates order book to Kryptoradio core and mark it as sent if it
--- was successful (= not replaced)
-updateBook :: String -> TVar (Map Key Scientific) -> Map Key Scientific -> IO ()
-updateBook url sentVar new = do
-  -- Deciding what to send. Not perfectly threads safe but will work
-  -- most of the time.
-  sent <- readTVarIO sentVar
-  let newStuff = unlines' $ map pairToCsv $ M.toList $ bookDiff sent new
-  (status,_) <- curlGetString url
-                [CurlCustomRequest "PUT",CurlPostFields [newStuff]]
-  case status of
-    CurlOK -> do
-      atomically $ writeTVar sentVar new
-      putStrLn "Updated"
-    _ -> putStrLn "Discarded"
+  let loop lastBook sentBook = do
+        -- Wait for changes and then fetch the new one
+        waitNew book lastBook
+        newBook <- readTVarIO book
+        -- Check last delivery status
+        deleted <- isDeleted out
+        putStrLn $ if deleted then "Discarded" else "Updated"
+        let refBook = if deleted then sentBook else lastBook
+        -- Construct new content. FIXME: Now assuming there is only
+        -- ASCII (this uses ordinary Strings instead of ByteStrings)
+        let packet = unlines' $ map pairToCsv $ M.toList $ bookDiff refBook newBook
+        hPrint out $ length packet
+        hPutStr out packet
+        -- Call again using the newest order book and last delivered one
+        loop newBook refBook
+    in loop M.empty M.empty
 
 orderbook :: TChan [Entry] -> TVar (Map Key Scientific) -> IO ()
 orderbook ch book = forever $ atomically $ do
@@ -125,3 +123,20 @@ waitNew var old = do
 -- |Like `unlines` but doesn't put newline after last element.
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
+
+getDefSocket = do
+  path <- getAppUserDataDirectory "kryptoradio-encoder"
+  return $ path ++ "/" ++ "exchange"
+
+-- |Returns True if previously sent element was dequeued or False
+-- otherwise. Blocks until it gets a response from main thread.
+isDeleted :: Handle -> IO Bool
+isDeleted h = do
+  hPutChar h 'D'
+  loop
+  where loop = do
+          c <- hGetChar h
+          case c of
+            'R' -> return False
+            'D' -> return True
+            _ -> loop
