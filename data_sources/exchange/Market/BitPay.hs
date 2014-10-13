@@ -11,6 +11,7 @@ import Data.Scientific (Scientific)
 import Network.Curl.Aeson
 
 import Exchange
+import Retry
 
 data BpRate = BpRate { code :: String
                      , name :: String
@@ -32,7 +33,7 @@ rateToEntry BpRate{..} = (Key Rate 0 code "XBT" "BITPAY",rate)
 
 bitpay :: TChan [Entry] -> IO ()
 bitpay chan = forever $ do
-  xs <- getRates
+  xs <- foreverRetryPrintEx getRates
   atomically $ writeTChan chan $ map rateToEntry xs
   -- Not a very good timing, but just wait for 30 seconds
   threadDelay 30000000
