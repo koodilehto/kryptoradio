@@ -56,8 +56,7 @@ main = do
   -- Loop for changes in order book and fork updater for it
   let loop lastBook sentBook = do
         -- Wait for changes and then fetch the new one
-        waitNew book lastBook
-        newBook <- readTVarIO book
+        newBook <- waitNew book lastBook
         -- Check last delivery status
         deleted <- isDeleted out
         putStrLn $ if deleted then "Discarded" else "Updated"
@@ -113,12 +112,13 @@ pairToCsv (Key{..},amount) =
           Ask   -> "A"
           Trade -> "T"
 
-waitNew :: Eq a => TVar a -> a -> IO ()
-waitNew var old = do
-  atomically $ do
-    new <- readTVar var
-    check $ old /= new
-  putStrLn "New data available"
+-- |Wait for new value in TVar which is different than the one already
+-- there. Returns new value.
+waitNew :: Eq a => TVar a -> a -> IO a
+waitNew var old = atomically $ do
+  new <- readTVar var
+  check $ old /= new
+  return new
 
 -- |Like `unlines` but doesn't put newline after last element.
 unlines' :: [String] -> String
