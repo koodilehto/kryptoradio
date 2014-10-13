@@ -48,7 +48,7 @@ app chan subs f conn = do
         Just x  -> atomically $ writeTChan chan x
 
 connectPusher :: String -> Int -> String -> [Text] -> Conv a -> TChan a -> IO ()
-connectPusher host port appKey chans f chan = foreverRetry worker printException
+connectPusher host port appKey chans f chan = foreverRetryPrintEx worker
   where subs = map channelToSubs chans
         path = "/app/" ++ appKey ++ "?protocol=7"
         worker = runClient host port path $ app chan subs f

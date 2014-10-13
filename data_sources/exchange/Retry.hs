@@ -10,12 +10,12 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 -- every failure, reporter function is called. If it fails before 5
 -- minutes, keep a 5 minute break before retrying. Otherwise retry
 -- immediately.
-foreverRetry :: (Exception e) => IO () -> (e -> IO ()) -> IO ()
+foreverRetry :: (Exception e) => IO a -> (e -> IO ()) -> IO a
 foreverRetry act reporter = do
   before <- getPOSIXTime
   result <- try act
   case result of
-    Right _ -> return () -- Graceful exit
+    Right a -> return a -- Graceful exit
     Left e -> do
       after <- getPOSIXTime
       reporter e
@@ -28,3 +28,7 @@ foreverRetry act reporter = do
 -- (SomeException).
 printException :: SomeException -> IO ()
 printException e = putStrLn $ "Exception received (retrying): " ++ show e
+
+-- |Shorthand for an easy retry.
+foreverRetryPrintEx :: IO a -> IO a
+foreverRetryPrintEx = flip foreverRetry printException
