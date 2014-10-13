@@ -1,0 +1,26 @@
+#!/bin/sh -eu
+#
+# Picks pseudorandom line from 4 files and combine them. The output
+# should be funny in some degree. Nonce is a "shared secret" of
+# ordering so it is possible to repeat same sequence using same
+# nonce.
+
+randfile=`mktemp`
+nonce="$1"
+
+pick () {
+    shuf -n 1 "--random-source=$randfile" "$1"
+}
+
+update_rand() {
+    {
+	echo $nonce
+	date -u -Iminutes
+    } | openssl dgst -sha1 -binary -out "$randfile"
+}
+
+while true; do
+    update_rand
+    echo `pick ihmiset.txt` `pick tyylit.txt`: `pick asiat.txt` `pick fiilikset.txt`
+    sleep 1m
+done
