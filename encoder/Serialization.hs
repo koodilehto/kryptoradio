@@ -16,13 +16,16 @@ import Resources (Content,Delivery(..))
 
 data ReadResult = Empty | Sync Integer | Packet (Word8,Content)
 
-serializator :: SyncAct -> STM (Word8,Content) -> (ByteString -> IO ()) -> ByteString -> IO ()
-serializator timer reader writeSerial syncPacket = serializator' 0 0
+serializator :: SyncAct -> STM (Word8,Content) -> (ByteString -> IO ()) -> IO ByteString -> IO ()
+serializator timer reader writeSerial getSyncPacket = serializator' 0 0
   where
     serializator' pad i = do
       -- Get new data. If we have a fragment in buffer, do not wait for
       -- more data. Otherwise we block and wait.
       incoming <- atomically $ (Sync <$> waitSync timer i) `orElse` (Packet <$> reader) `orElse` waitIfEmpty
+
+      -- FIXME workaround until rewrite
+      syncPacket <- getSyncPacket
 
       let (report,bs) = case incoming of
             Empty -> (skip,trail) -- Pad everything
@@ -61,6 +64,6 @@ toKRFs pos bs = if B.null next
 klpSize :: Int64
 klpSize = 178
 
--- |Sync header contains sync indicator and protocol version
+-- |Sync header contains sync indicator and protocol version.
 syncHeader :: ByteString
-syncHeader = B.pack [0x00,0x00]
+syncHeader = B.pack [0x00,0x01]

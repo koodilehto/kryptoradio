@@ -44,7 +44,7 @@ main = do
   defSockPath <- getAppUserDataDirectory "kryptoradio-encoder"
   Args{..} <- cmdArgs $ synopsis defSockPath
   when (not mock && baud == 0) $ error "Baud rate is not set. See --help"
-  res <- newResources resources
+  conf <- newConf rawResources
   timer <- newSyncTimer
   (serialClose,writeSerial) <- if mock
                                then openMockSerialOut device baud
@@ -52,12 +52,12 @@ main = do
   -- Prepare socket dir
   putStrLn $ "Listening to " ++ socket
   createDirectoryIfMissing False socket
-  threads <- flip mapM res $ \r ->
+  threads <- flip mapM (resources conf) $ \r ->
     foreverAccept (app r timer) $ socket ++ "/" ++ T.unpack (name r)
   -- Start serial traffic handler in main thread. On shutdown, give
   -- 100ms for thread clean-up.
   finally
-    (serializator timer (priorityTake res) writeSerial (syncPacket res))
+    (serializator timer (priorityTake $ resources conf) writeSerial (syncPacket conf))
     (mapM_ killThread threads >> threadDelay 100000)
 
 -- |Main app for handling incoming connection to a handle.
