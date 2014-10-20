@@ -15,14 +15,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word
 import GHC.Exts (sortWith)
 
-data Delivery = Start    -- ^ Beginning state. Never stored in TVar.
-              | Waiting  -- ^ The data is enqueued.
-              | Replaced -- ^ Not delivered. Replaced or deleted.
-              | Sending  -- ^ Parts of data is already sent.
-              | Sent     -- ^ The data has been delivered.
-              deriving (Eq,Show)
-
-type Content = (TVar Delivery,BL.ByteString)
+type Content = BL.ByteString
 
 type RawResource = TMVar Content -> Resource
 

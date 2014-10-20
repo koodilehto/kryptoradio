@@ -27,16 +27,14 @@ serializator timer reader writeSerial getSyncPacket = serializator' 0 0
       -- FIXME workaround until rewrite
       syncPacket <- getSyncPacket
 
-      let (report,bs) = case incoming of
-            Empty -> (skip,trail) -- Pad everything
-            Sync _ -> (skip,trail `B.append` syncHeader `B.append` toKRFs 2 syncPacket)
-            Packet (r,(delivery,msg)) ->
-              (atomically.writeTVar delivery,toKRFs pad $ rid r `B.cons` msg)
+      let bs = case incoming of
+            Empty -> trail -- Pad everything
+            Sync _ -> trail `B.append` syncHeader `B.append` toKRFs 2 syncPacket
+            Packet (r,msg) ->
+              toKRFs pad $ rid r `B.cons` msg
 
       -- Send it
-      report Sending
       writeSerial bs
-      report Sent
 
       -- Calculate new offset in PES packet
       let offset = (pad + B.length bs) `mod` klpSize
@@ -47,7 +45,6 @@ serializator timer reader writeSerial getSyncPacket = serializator' 0 0
       where
         trail       = if pad == 0 then B.empty else B.replicate (klpSize-pad) 0xfe
         waitIfEmpty = if pad == 0 then retry   else return Empty
-        skip _ = return ()
 
 -- |Split a Kryptoradio Resource Packet (KRP) to Kryptoradio Resource
 -- Fragments (KRF) and concatenate everything.

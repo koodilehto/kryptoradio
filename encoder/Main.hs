@@ -80,8 +80,7 @@ handleMsg r h = do
       fail "Not an integer"
 
   -- Write it to underlying worker
-  delivery <- newTVarIO Waiting
-  atomically $ putTMVar (var r) (delivery,packet)
+  atomically $ putTMVar (var r) packet
 
   -- Wait for delivery
   cmdVar <- newEmptyTMVarIO
