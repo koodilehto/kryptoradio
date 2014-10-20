@@ -53,9 +53,9 @@ newConf :: [RawResource] -> IO Conf
 newConf raws = Conf <$> (mapM (<$> newEmptyTMVarIO) raws)
 
 -- |Get resource id and new message using correct priority. 
-priorityTake :: [Resource] -> STM (Word8,Content)
+priorityTake :: [Resource] -> STM (Resource,Content)
 priorityTake res = foldr1 orElse $ map f $ sortWith priority res
-  where f Resource{..} = (rid,) <$> takeTMVar var
+  where f r = (r,) <$> takeTMVar (var r)
 
 buildResource :: Resource -> Builder
 buildResource Resource{..} = fromWord8 rid <>

@@ -12,11 +12,11 @@ import Data.Int
 import System.IO (Handle,hFlush)
 
 import SyncTimer
-import Resources (Content,Delivery(..))
+import Resources
 
-data ReadResult = Empty | Sync Integer | Packet (Word8,Content)
+data ReadResult = Empty | Sync Integer | Packet (Resource,Content)
 
-serializator :: SyncAct -> STM (Word8,Content) -> (ByteString -> IO ()) -> IO ByteString -> IO ()
+serializator :: SyncAct -> STM (Resource,Content) -> (ByteString -> IO ()) -> IO ByteString -> IO ()
 serializator timer reader writeSerial getSyncPacket = serializator' 0 0
   where
     serializator' pad i = do
@@ -30,8 +30,8 @@ serializator timer reader writeSerial getSyncPacket = serializator' 0 0
       let (report,bs) = case incoming of
             Empty -> (skip,trail) -- Pad everything
             Sync _ -> (skip,trail `B.append` syncHeader `B.append` toKRFs 2 syncPacket)
-            Packet (rid,(delivery,msg)) ->
-              (atomically.writeTVar delivery,toKRFs pad $ rid `B.cons` msg)
+            Packet (r,(delivery,msg)) ->
+              (atomically.writeTVar delivery,toKRFs pad $ rid r `B.cons` msg)
 
       -- Send it
       report Sending
