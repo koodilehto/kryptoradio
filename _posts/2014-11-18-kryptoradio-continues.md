@@ -11,8 +11,8 @@ Kryptoradio to the end of this year. We continue broadcasting in E
 multiplex which covers 95% of Finnish population.
 
 Joel has been busy with his other job which has kept the project a bit
-silent last week. Meanwhile we have had some problems with our RS232
-hardware which was fortunately fixed without replacing any
+silent for some weeks. Meanwhile we have had some problems with our
+RS232 hardware which was fortunately fixed without replacing any
 hardware. Kryptoradio broadcasting is up again after a downtime.
 
 Our co-operation with [Krypto Fin ry.](http://fimk.fi/) has
