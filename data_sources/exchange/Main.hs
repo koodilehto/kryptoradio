@@ -13,12 +13,12 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Scientific
 import Network
-import System.Console.CmdArgs.Implicit hiding (name)
+import System.Console.CmdArgs.Implicit
 import System.Directory
 import System.IO
 
 import Market.Bitstamp
-import Market.BitPay
+import Market.BitPay hiding (name)
 import Exchange
 import ScifiTools
 
@@ -29,9 +29,10 @@ bomb act = act . either throw (const $ error "Thread died")
 data Args = Args { socket :: String
                  } deriving (Show, Data, Typeable)
 
-synopsis defSocket =
-  Args { socket = defSocket &= help ("Kryptoradio Encoder socket (default: " ++
-                                     defSocket ++ ")")
+synopsis defEncoder =
+  Args { socket = def &= typFile &= name "u" &=
+                  help ("Kryptoradio Encoder Unix domain socket (default: " ++
+                        defEncoder ++ ")")
        }
   &= program "kryptoradio-exchange"
   &= summary "Kryptoradio Exchange Information v0.0.1"
@@ -39,14 +40,14 @@ synopsis defSocket =
           \order book. Sends data to Kryptoradio Encoder at given URL"
 
 main = do
-  defSocket <- getDefSocket
-  Args{..} <- cmdArgs $ synopsis defSocket
+  defEncoder <- getDefSocket "kryptoradio-encoder"
+  Args{..} <- cmdArgs $ synopsis defEncoder
   -- Prepare transactional variables
   ch <- newTChanIO
   book <- newTVarIO M.empty
   sentBook <- newTVarIO M.empty
   -- Open connection to Kryptoradio encoder
-  out <- connectTo undefined $ UnixSocket socket
+  out <- connectTo undefined $ UnixSocket $ if null socket then defEncoder else socket
   -- Fork data sources. `safefork` makes sure that the exception is
   -- listened on the main loop
   let safeFork a = forkFinally a $ bomb $ atomically.writeTVar book
@@ -124,8 +125,8 @@ waitNew var old = atomically $ do
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
 
-getDefSocket = do
-  path <- getAppUserDataDirectory "kryptoradio-encoder"
+getDefSocket app = do
+  path <- getAppUserDataDirectory app
   return $ path ++ "/" ++ "exchange"
 
 -- |Returns True if previously sent element was dequeued or False
