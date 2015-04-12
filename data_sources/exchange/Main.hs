@@ -7,7 +7,7 @@ import Control.Concurrent (forkFinally)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad.STM
-import Control.Monad (forever)
+import Control.Monad (forever, unless, void, when)
 import Data.List (intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -26,13 +26,19 @@ import ScifiTools
 bomb :: (a -> c) -> Either SomeException b -> c
 bomb act = act . either throw (const $ error "Thread died")
 
-data Args = Args { socket :: String
+data Args = Args { socket          :: String
+                 , bitstamp_book   :: Bool
+                 , bitstamp_trades :: Bool
+                 , bitpay_rates    :: Bool
                  } deriving (Show, Data, Typeable)
 
 synopsis defEncoder =
   Args { socket = def &= typFile &= name "u" &=
                   help ("Kryptoradio Encoder Unix domain socket (default: " ++
                         defEncoder ++ ")")
+       , bitstamp_book = def &= name "S" &= help "Enable Bitstamp order book"
+       , bitstamp_trades = def &= name "s" &= help "Enable Bitstamp trades"
+       , bitpay_rates = def &= name "p" &= help "Enable BitPay rates"
        }
   &= program "kryptoradio-exchange"
   &= summary "Kryptoradio Exchange Information v0.0.1"
@@ -42,17 +48,22 @@ synopsis defEncoder =
 main = do
   defEncoder <- getDefSocket "kryptoradio-encoder"
   Args{..} <- cmdArgs $ synopsis defEncoder
+  -- Some sanity checks
+  unless (bitstamp_book || bitstamp_trades || bitpay_rates) $
+    fail "You need to define at least one data source. To get them all, use -Ssp"
   -- Prepare transactional variables
   ch <- newTChanIO
   book <- newTVarIO M.empty
   sentBook <- newTVarIO M.empty
   -- Open connection to Kryptoradio encoder
   out <- connectTo undefined $ UnixSocket $ if null socket then defEncoder else socket
-  -- Fork data sources. `safefork` makes sure that the exception is
-  -- listened on the main loop
-  let safeFork a = forkFinally a $ bomb $ atomically.writeTVar book
-  safeFork $ bitstamp ch
-  safeFork $ bitpay ch
+  -- `safefork` makes sure that the exception is listened on the main
+  -- loop.
+  let safeFork a = void $ forkFinally a $ bomb $ atomically.writeTVar book
+  -- Fork sources that user wants
+  when (bitstamp_book || bitstamp_trades) $
+    safeFork $ bitstamp bitstamp_book bitstamp_trades ch
+  when bitpay_rates $ safeFork $ bitpay ch
   safeFork $ orderbook ch book
   -- Loop for changes in order book and fork updater for it
   let loop lastBook sentBook = do

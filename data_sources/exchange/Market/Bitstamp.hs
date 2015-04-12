@@ -13,10 +13,6 @@ import Data.Scientific (Scientific,fromFloatDigits)
 import Pusher
 import Exchange
 
--- |Subscriptions to Bitstamp live order book and trade stream
-subs :: [Text]
-subs = ["diff_order_book","live_trades"]
-
 extract Pusher{..} = case (event,channel) of
   ("data","diff_order_book") -> either fail Just $ parseEither orderParser payload
   ("trade","live_trades") -> either fail Just $ parseEither tradeParser payload
@@ -35,8 +31,12 @@ extract Pusher{..} = case (event,channel) of
       return [(Key Trade price "USD" "XBT" "BITSTAMP",amount)]
     conv entry (price,amount) = (Key entry (read price) "USD" "XBT" "BITSTAMP",read amount)
 
-bitstamp :: TChan [Entry] -> IO ()
-bitstamp = connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs extract
+bitstamp :: Bool -> Bool -> TChan [Entry] -> IO ()
+bitstamp book trades =
+  connectPusher "ws.pusherapp.com" 80 "de504dc5763aeef9ff52" subs extract
+  -- Subscriptions to Bitstamp live order book and trade stream
+  where subs = (if book then ("diff_order_book":) else id)
+               (if trades then ["live_trades"] else [])
 
 -- |This fixes issue with Bitstamp trade data. When read as double and
 -- then converted to Scientific, automatic error rounding takes
