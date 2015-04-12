@@ -68,10 +68,15 @@ main = do
   -- Loop for changes in order book and fork updater for it
   let loop lastBook sentBook = do
         -- Wait for changes and then fetch the new one
-        newBook <- waitNew book lastBook
+        waitNew book lastBook
         -- Check last delivery status
         deleted <- isDeleted out
         putStrLn $ if deleted then "Discarded" else "Updated"
+        -- Fetch book contents after getting status byte so the data
+        -- doesn't age while being in `isDeleted` loop.
+        newBook <- readTVarIO book
+        -- Use the last book accepted by the encoder as reference when
+        -- calculating the diff.
         let refBook = if deleted then sentBook else lastBook
         -- Construct new content. FIXME: Now assuming there is only
         -- ASCII (this uses ordinary Strings instead of ByteStrings)
@@ -124,13 +129,11 @@ pairToCsv (Key{..},amount) =
           Ask   -> "A"
           Trade -> "T"
 
--- |Wait for new value in TVar which is different than the one already
--- there. Returns new value.
-waitNew :: Eq a => TVar a -> a -> IO a
+-- |Wait for changes in TVar content.
+waitNew :: Eq a => TVar a -> a -> IO ()
 waitNew var old = atomically $ do
   new <- readTVar var
   check $ old /= new
-  return new
 
 -- |Like `unlines` but doesn't put newline after last element.
 unlines' :: [String] -> String
