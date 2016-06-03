@@ -33,7 +33,7 @@ If Bitcoin economy goes that way, removing the unnecessary middlemen
 from our economy, that would pave the road for Kryptoradio and other
 alternative ways for transferring financial transactions.
 
-Also, I have became a licensed radio amateur last April. My call sign
+Also, I have become a licensed radio amateur last April. My call sign
 is OH6EYA. There may be some common ground between peer-to-peer cash
 and amateur radio. We'll see what it is in the future.
 
