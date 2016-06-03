@@ -25,7 +25,7 @@ Since then I have worked with Bitcoin technology in
 [Prasos Ltd.](http://prasos.fi/) located in Jyväskylä, Finland.
 We have done great things such as
 [Denarium physical bitcoins](http://denarium.com/)
-and a exchange service with a volume of million euros per month.
+and an exchange service with a volume of one million euros per month.
 I believe the Bitcoin economy is still on this phase where bitcoins
 are for traders and collectors, although I see growing interest in
 peer-to-peer market such as [OpenBazaar](https://openbazaar.org/).
