@@ -39,7 +39,6 @@ in the cryptocurrency.
 #### Contact info
 
 * Krypto FIN ry, Svante Lehtinen, info@fimk.fi
-* Koodilehto co-op, Joel Lehtonen, joel.lehtonen@koodilehto.fi +358 40 685 1884
-* Web site: http://kryptoradio.koodilehto.fi/
+* Koodilehto co-op, Joel Lehtonen, joel.lehtonen@koodilehto.fi
 
 

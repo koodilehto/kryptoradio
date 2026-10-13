@@ -19,7 +19,6 @@ Koodilehto on jyväskyläläinen ohjelmistoalan yritys, jonka monialaiset ammatt
 
 #### Yhteystiedot
 
-* Joel Lehtonen, Koodilehto, puh. 040 685 1884, joel.lehtonen@koodilehto.fi
+* Joel Lehtonen, Koodilehto, joel.lehtonen@koodilehto.fi
 * Markus Ala-Hautala, liiketoimintojen ja palveluiden johtaja, Digita Networks, puh. 0400 549 023, markus.ala-hautala@digita.fi
-* Projektin verkkosivut: http://kryptoradio.koodilehto.fi/
 

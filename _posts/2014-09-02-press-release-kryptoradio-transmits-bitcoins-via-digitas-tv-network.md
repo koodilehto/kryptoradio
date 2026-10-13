@@ -18,8 +18,7 @@ Koodilehto is a Finnish software company that combines open technologies for the
 
 #### Contact information
 
-* Joel Lehtonen, Koodilehto, Tel. +358 40 685 1884, joel.lehtonen@koodilehto.fi
+* Joel Lehtonen, Koodilehto, joel.lehtonen@koodilehto.fi
 * Markus Ala-Hautala, Director, Business and Service Management, Digita Networks, Tel. +358 400 549 023, markus.ala-hautala@digita.fi
-* Project website: http://kryptoradio.koodilehto.fi/
 
 

@@ -43,6 +43,5 @@ IT-alan ammattilaisista koostuva jyväskyläläinen ohjelmistoyritys.
 #### Lisätietoja
 
 * Krypto FIN ry, Svante Lehtinen, info@fimk.fi
-* Koodilehto osk, Joel Lehtonen, joel.lehtonen@koodilehto.fi +358 40 685 1884
-* Nettisivut: http://kryptoradio.koodilehto.fi/
+* Koodilehto osk, Joel Lehtonen, joel.lehtonen@koodilehto.fi
 
